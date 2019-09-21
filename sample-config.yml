@@ -1,0 +1,29 @@
+check_interval: 30
+
+monitors:
+  - name: My Website
+    command: [ 'curl', '-s', '-o', '/dev/null', 'https://minitor.mon' ]
+    alert_down: [ log, mailgun_down, sms_down ]
+    alert_up: [ log, email_up ]
+    check_interval: 30 # Must be at minimum the global `check_interval`
+    alert_after: 3
+    alert_every: -1 # Defaults to -1 for exponential backoff. 0 to disable repeating
+
+alerts:
+  email_up:
+    command: [ sendmail, "me@minitor.mon",  "Recovered: {monitor_name}",  "We're back!" ]
+  mailgun_down:
+    command: >
+      curl -s -X POST
+      -F subject="Alert! {monitor_name} failed"
+      -F from="Minitor <minitor@minitor.mon>"
+      -F to=me@minitor.mon
+      -F text="Our monitor failed"
+      https://api.mailgun.net/v3/minitor.mon/messages
+      -u "api:${MAILGUN_API_KEY}"
+  sms_down:
+    command: >
+      curl -s -X POST -F "Body=Failure! {monitor_name} has failed"
+      -F "From=${AVAILABLE_NUMBER}" -F "To=${MY_PHONE}"
+      "https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Messages"
+      -u "${ACCOUNT_SID}:${AUTH_TOKEN}"
