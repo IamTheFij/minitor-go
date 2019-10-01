@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"log"
 	"os/exec"
 	"text/template"
 	"time"
@@ -12,7 +14,7 @@ type Alert struct {
 	Command              []string
 	CommandShell         string `yaml:"command_shell"`
 	commandTemplate      []template.Template
-	commandShellTemplate template.Template
+	commandShellTemplate *template.Template
 }
 
 func (alert Alert) IsValid() bool {
@@ -43,8 +45,14 @@ func (alert Alert) Send(notice AlertNotice) {
 	} else if alert.commandShellTemplate != nil {
 		var commandBuffer bytes.Buffer
 		err := alert.commandShellTemplate.Execute(&commandBuffer, notice)
-		// TODO handle error
+		if err != nil {
+			panic(err)
+		}
 		cmd = exec.Command(commandBuffer.String())
+
+		output, err := cmd.CombinedOutput()
+		log.Printf("Check %s\n---\n%s\n---", alert.Name, string(output))
+
 	} else {
 		panic("No template?")
 	}

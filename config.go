@@ -18,6 +18,8 @@ func LoadConfig(filePath string) (config Config) {
 	if err != nil {
 		panic(err)
 	}
+
+	// TODO: Decide if this is better expanded here, or only when executing
 	env_expanded := os.ExpandEnv(string(data))
 
 	err = yaml.Unmarshal([]byte(env_expanded), &config)
