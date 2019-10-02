@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// Alert is a config driven mechanism for sending a notice
 type Alert struct {
 	Name                 string
 	Command              []string
@@ -16,12 +17,25 @@ type Alert struct {
 	commandShellTemplate *template.Template
 }
 
+// AlertNotice captures the context for an alert to be sent
+type AlertNotice struct {
+	MonitorName     string
+	AlertCount      int16
+	FailureCount    int16
+	LastCheckOutput string
+	LastSuccess     time.Time
+	IsUp            bool
+}
+
+// IsValid returns a boolean indicating if the Alert has been correctly
+// configured
 func (alert Alert) IsValid() bool {
 	atLeastOneCommand := (alert.CommandShell != "" || alert.Command != nil)
 	atMostOneCommand := (alert.CommandShell == "" || alert.Command == nil)
 	return atLeastOneCommand && atMostOneCommand
 }
 
+// BuildTemplates compiles command templates for the Alert
 func (alert *Alert) BuildTemplates() {
 	if alert.commandTemplate == nil && alert.Command != nil {
 		// build template
@@ -40,17 +54,12 @@ func (alert *Alert) BuildTemplates() {
 		)
 		log.Printf("Template built: %v", alert.commandShellTemplate)
 	} else {
-		panic("No template provided?")
+		panic("No template provided for alert %s", alert.Name)
 	}
 }
 
-func (alert *Alert) Send(notice AlertNotice) {
-	// TODO: Validate and build templates in a better place and make this immutable
-	if !alert.IsValid() {
-		log.Fatalf("Alert is invalid: %v", alert)
-	}
-	alert.BuildTemplates()
-
+// Send will send an alert notice by executing the command template
+func (alert Alert) Send(notice AlertNotice) {
 	var cmd *exec.Cmd
 
 	if alert.commandTemplate != nil {
@@ -85,13 +94,4 @@ func (alert *Alert) Send(notice AlertNotice) {
 	if err != nil {
 		panic(err)
 	}
-}
-
-type AlertNotice struct {
-	MonitorName     string
-	AlertCount      int16
-	FailureCount    int16
-	LastCheckOutput string
-	LastSuccess     time.Time
-	IsUp            bool
 }

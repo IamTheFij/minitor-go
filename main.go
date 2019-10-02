@@ -12,6 +12,8 @@ func main() {
 		for _, monitor := range config.Monitors {
 			if monitor.ShouldCheck() {
 				_, alertNotice := monitor.Check()
+
+				// Should probably consider refactoring everything below here
 				if alertNotice != nil {
 					//log.Printf("Recieved an alert notice: %v", alertNotice)
 					var alerts []string

@@ -92,5 +92,6 @@ Improvement:
   - [] Implement leveled logging (maybe glog or logrus)
   - [] Consider switching from YAML to TOML
   - [] Consider value of templating vs injecting values into Env variables
+  - [] Consider dropping `alert_up` and `alert_down` in favor of using Go templates that offer more control of messaging
   - [] Async checking
   - [] Use durations rather than seconds checked in event loop
