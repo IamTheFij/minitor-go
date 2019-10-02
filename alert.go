@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"os/exec"
 	"text/template"
@@ -13,7 +12,7 @@ type Alert struct {
 	Name                 string
 	Command              []string
 	CommandShell         string `yaml:"command_shell"`
-	commandTemplate      []template.Template
+	commandTemplate      []*template.Template
 	commandShellTemplate *template.Template
 }
 
@@ -26,42 +25,73 @@ func (alert Alert) IsValid() bool {
 func (alert *Alert) BuildTemplates() {
 	if alert.commandTemplate == nil && alert.Command != nil {
 		// build template
-		fmt.Println("Building template for command...")
+		log.Println("Building template for command...")
+		alert.commandTemplate = []*template.Template{}
+		for i, cmdPart := range alert.Command {
+			alert.commandTemplate = append(alert.commandTemplate, template.Must(
+				template.New(alert.Name+string(i)).Parse(cmdPart),
+			))
+		}
+		log.Printf("Template built: %v", alert.commandTemplate)
 	} else if alert.commandShellTemplate == nil && alert.CommandShell != "" {
+		log.Println("Building template for shell command...")
 		alert.commandShellTemplate = template.Must(
 			template.New(alert.Name).Parse(alert.CommandShell),
 		)
+		log.Printf("Template built: %v", alert.commandShellTemplate)
 	} else {
-		panic("No template?")
+		panic("No template provided?")
 	}
 }
 
-func (alert Alert) Send(notice AlertNotice) {
+func (alert *Alert) Send(notice AlertNotice) {
+	// TODO: Validate and build templates in a better place and make this immutable
+	if !alert.IsValid() {
+		log.Fatalf("Alert is invalid: %v", alert)
+	}
+	alert.BuildTemplates()
+
 	var cmd *exec.Cmd
 
 	if alert.commandTemplate != nil {
 		// build template
-		fmt.Println("Send command thing...")
+		log.Println("Send command thing...")
+		command := []string{}
+		for _, cmdTmp := range alert.commandTemplate {
+			var commandBuffer bytes.Buffer
+			err := cmdTmp.Execute(&commandBuffer, notice)
+			if err != nil {
+				panic(err)
+			}
+			command = append(command, commandBuffer.String())
+		}
+		cmd = exec.Command(command[0], command[1:]...)
 	} else if alert.commandShellTemplate != nil {
 		var commandBuffer bytes.Buffer
 		err := alert.commandShellTemplate.Execute(&commandBuffer, notice)
 		if err != nil {
 			panic(err)
 		}
-		cmd = exec.Command(commandBuffer.String())
+		shellCommand := commandBuffer.String()
 
-		output, err := cmd.CombinedOutput()
-		log.Printf("Check %s\n---\n%s\n---", alert.Name, string(output))
-
+		log.Printf("About to run alert command: %s", shellCommand)
+		cmd = ShellCommand(shellCommand)
 	} else {
-		panic("No template?")
+		panic("No template compiled?")
+	}
+
+	output, err := cmd.CombinedOutput()
+	log.Printf("Check %s\n---\n%s\n---", alert.Name, string(output))
+	if err != nil {
+		panic(err)
 	}
 }
 
 type AlertNotice struct {
 	MonitorName     string
-	AlertCount      int64
-	FailureCount    int64
+	AlertCount      int16
+	FailureCount    int16
 	LastCheckOutput string
 	LastSuccess     time.Time
+	IsUp            bool
 }

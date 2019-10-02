@@ -9,8 +9,8 @@ import (
 
 type Config struct {
 	CheckInterval int64 `yaml:"check_interval"`
-	Monitors      []Monitor
-	Alerts        map[string]Alert
+	Monitors      []*Monitor
+	Alerts        map[string]*Alert
 }
 
 func LoadConfig(filePath string) (config Config) {
@@ -24,7 +24,7 @@ func LoadConfig(filePath string) (config Config) {
 
 	err = yaml.Unmarshal([]byte(env_expanded), &config)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Fatalf("ERROR: %v", err)
 		panic(err)
 	}
 

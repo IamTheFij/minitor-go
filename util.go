@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os/exec"
 	"strings"
 )
@@ -19,6 +18,6 @@ func escapeCommandShell(command string) string {
 /// ShellCommand takes a string and executes it as a command using `sh`
 func ShellCommand(command string) *exec.Cmd {
 	shellCommand := []string{"sh", "-c", escapeCommandShell(command)}
-	log.Printf("Command: %v", shellCommand)
+	//log.Printf("Shell command: %v", shellCommand)
 	return exec.Command(shellCommand[0], shellCommand[1:]...)
 }
