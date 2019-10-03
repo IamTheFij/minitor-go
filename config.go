@@ -38,7 +38,9 @@ func (config Config) IsValid() (isValid bool) {
 func (config *Config) Init() {
 	for name, alert := range config.Alerts {
 		alert.Name = name
-		alert.BuildTemplates()
+		if err := alert.BuildTemplates(); err != nil {
+			panic(err)
+		}
 	}
 }
 

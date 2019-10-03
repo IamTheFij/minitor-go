@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"os/exec"
 	"text/template"
@@ -36,7 +37,7 @@ func (alert Alert) IsValid() bool {
 }
 
 // BuildTemplates compiles command templates for the Alert
-func (alert *Alert) BuildTemplates() {
+func (alert *Alert) BuildTemplates() error {
 	if alert.commandTemplate == nil && alert.Command != nil {
 		// build template
 		log.Println("Building template for command...")
@@ -52,46 +53,50 @@ func (alert *Alert) BuildTemplates() {
 		alert.commandShellTemplate = template.Must(
 			template.New(alert.Name).Parse(alert.CommandShell),
 		)
-		log.Printf("Template built: %v", alert.commandShellTemplate)
 	} else {
-		log.Fatalf("No template provided for alert %s", alert.Name)
+		return fmt.Errorf("No template provided for alert %s", alert.Name)
 	}
+
+	return nil
 }
 
 // Send will send an alert notice by executing the command template
-func (alert Alert) Send(notice AlertNotice) {
+func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
 	var cmd *exec.Cmd
-
 	if alert.commandTemplate != nil {
-		// build template
-		log.Println("Send command thing...")
 		command := []string{}
 		for _, cmdTmp := range alert.commandTemplate {
 			var commandBuffer bytes.Buffer
-			err := cmdTmp.Execute(&commandBuffer, notice)
+			err = cmdTmp.Execute(&commandBuffer, notice)
 			if err != nil {
-				panic(err)
+				return
 			}
 			command = append(command, commandBuffer.String())
 		}
 		cmd = exec.Command(command[0], command[1:]...)
 	} else if alert.commandShellTemplate != nil {
 		var commandBuffer bytes.Buffer
-		err := alert.commandShellTemplate.Execute(&commandBuffer, notice)
+		err = alert.commandShellTemplate.Execute(&commandBuffer, notice)
 		if err != nil {
-			panic(err)
+			return
 		}
 		shellCommand := commandBuffer.String()
 
-		log.Printf("About to run alert command: %s", shellCommand)
 		cmd = ShellCommand(shellCommand)
 	} else {
-		panic("No template compiled?")
+		err = fmt.Errorf("No templates compiled for alert %v", alert.Name)
+		return
 	}
 
-	output, err := cmd.CombinedOutput()
-	log.Printf("Check %s\n---\n%s\n---", alert.Name, string(output))
-	if err != nil {
-		panic(err)
+	// Exit if we're not ready to run the command
+	if cmd == nil || err != nil {
+		return
 	}
+
+	var output []byte
+	output, err = cmd.CombinedOutput()
+	output_str = string(output)
+	log.Printf("Check %s\n---\n%s\n---", alert.Name, output_str)
+
+	return output_str, err
 }

@@ -146,13 +146,13 @@ func TestMonitorFailureAlertEvery(t *testing.T) {
 		name         string
 	}{
 		/*
-			  		TODO: Actually found a bug in original implementation. There is an inconsistency in the way AlertAfter is treated.
-						For "First alert only" (ie. AlertEvery=0), it is the number of failures to ignore before alerting, so AlertAfter=1
-						  will ignore the first failure and alert on the second failure
-						For other intervals (ie. AlertEvery=1), it is essentially indexed on one. Essentially making AlertAfter=1 trigger
-						  on the first failure.
+			TODO: Actually found a bug in original implementation. There is an inconsistency in the way AlertAfter is treated.
+			For "First alert only" (ie. AlertEvery=0), it is the number of failures to ignore before alerting, so AlertAfter=1
+			will ignore the first failure and alert on the second failure
+			For other intervals (ie. AlertEvery=1), it is essentially indexed on one. Essentially making AlertAfter=1 trigger
+			on the first failure.
 
-						For usabilty, this should be consistent. Consistent with what though? minitor-py? Or itself? Dun dun duuuunnnnn!
+			For usabilty, this should be consistent. Consistent with what though? minitor-py? Or itself? Dun dun duuuunnnnn!
 		*/
 		{Monitor{AlertAfter: 1}, true, "Empty"}, // Defaults to true because AlertAfter and AlertEvery default to 0
 		// Alert first time only, after 1

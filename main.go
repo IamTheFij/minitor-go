@@ -29,7 +29,10 @@ func main() {
 					}
 					for _, alertName := range alerts {
 						if alert, ok := config.Alerts[alertName]; ok {
-							alert.Send(*alertNotice)
+							_, err := alert.Send(*alertNotice)
+							if err != nil {
+								panic(err)
+							}
 						} else {
 							log.Printf("WARNING: Could not find alert for %s", alertName)
 						}
