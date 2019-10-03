@@ -12,4 +12,8 @@
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
+# User configuration
 config.yml
+
+# Output binary
+minitor-go
