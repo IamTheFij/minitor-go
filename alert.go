@@ -54,7 +54,7 @@ func (alert *Alert) BuildTemplates() {
 		)
 		log.Printf("Template built: %v", alert.commandShellTemplate)
 	} else {
-		panic("No template provided for alert %s", alert.Name)
+		log.Fatalf("No template provided for alert %s", alert.Name)
 	}
 }
 

@@ -31,7 +31,7 @@ type Monitor struct {
 func (monitor Monitor) IsValid() bool {
 	atLeastOneCommand := (monitor.CommandShell != "" || monitor.Command != nil)
 	atMostOneCommand := (monitor.CommandShell == "" || monitor.Command == nil)
-	return atLeastOneCommand && atMostOneCommand
+	return atLeastOneCommand && atMostOneCommand && monitor.AlertAfter >= 0
 }
 
 // ShouldCheck returns a boolean indicating if the Monitor is ready to be
@@ -116,9 +116,12 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	}
 
 	failureCount := (monitor.failureCount - monitor.AlertAfter)
+	log.Printf("Total fail %v, this fail %v", monitor.failureCount, failureCount)
 
 	if monitor.AlertEvery > 0 {
 		// Handle integer number of failures before alerting
+		modVal := failureCount % monitor.AlertEvery
+		log.Printf("Alert every > 0: Mod val: %v", modVal)
 		if failureCount%monitor.AlertEvery == 0 {
 			notice = monitor.createAlertNotice(false)
 		}
