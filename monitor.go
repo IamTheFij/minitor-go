@@ -31,7 +31,7 @@ type Monitor struct {
 func (monitor Monitor) IsValid() bool {
 	atLeastOneCommand := (monitor.CommandShell != "" || monitor.Command != nil)
 	atMostOneCommand := (monitor.CommandShell == "" || monitor.Command == nil)
-	return atLeastOneCommand && atMostOneCommand && monitor.AlertAfter >= 0
+	return atLeastOneCommand && atMostOneCommand && monitor.getAlertAfter() > 0
 }
 
 // ShouldCheck returns a boolean indicating if the Monitor is ready to be
@@ -105,29 +105,25 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	log.Printf("Devastating failure. :(")
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
-	if monitor.failureCount < monitor.AlertAfter {
-		// TODO: Turn into a debug
+	if monitor.failureCount < monitor.getAlertAfter() {
 		log.Printf(
 			"Have not hit minimum failures. failures: %v alert after: %v",
 			monitor.failureCount,
-			monitor.AlertAfter,
+			monitor.getAlertAfter(),
 		)
 		return
 	}
 
-	failureCount := (monitor.failureCount - monitor.AlertAfter)
-	log.Printf("Total fail %v, this fail %v", monitor.failureCount, failureCount)
+	failureCount := (monitor.failureCount - monitor.getAlertAfter())
 
 	if monitor.AlertEvery > 0 {
 		// Handle integer number of failures before alerting
-		modVal := failureCount % monitor.AlertEvery
-		log.Printf("Alert every > 0: Mod val: %v", modVal)
 		if failureCount%monitor.AlertEvery == 0 {
 			notice = monitor.createAlertNotice(false)
 		}
 	} else if monitor.AlertEvery == 0 {
 		// Handle alerting on first failure only
-		if failureCount == 1 {
+		if failureCount == 0 {
 			notice = monitor.createAlertNotice(false)
 		}
 	} else {
@@ -142,6 +138,16 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	}
 
 	return
+}
+
+func (monitor Monitor) getAlertAfter() int16 {
+	// TODO: Come up with a better way than this method
+	// Zero is one!
+	if monitor.AlertAfter == 0 {
+		return 1
+	} else {
+		return monitor.AlertAfter
+	}
 }
 
 func (monitor Monitor) createAlertNotice(isUp bool) *AlertNotice {
