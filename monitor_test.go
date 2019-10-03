@@ -215,3 +215,61 @@ func TestMonitorFailureExponential(t *testing.T) {
 		log.Println("-----")
 	}
 }
+
+// TestMonitorCheck tests successful and failed commands and shell commands
+func TestMonitorCheck(t *testing.T) {
+	type expected struct {
+		isSuccess  bool
+		hasNotice  bool
+		lastOutput string
+	}
+	cases := []struct {
+		monitor Monitor
+		expect  expected
+		name    string
+	}{
+		{
+			Monitor{Command: []string{"echo", "success"}},
+			expected{isSuccess: true, hasNotice: false, lastOutput: "success\n"},
+			"Test successful command",
+		},
+		{
+			Monitor{CommandShell: "echo success"},
+			expected{isSuccess: true, hasNotice: false, lastOutput: "success\n"},
+			"Test successful command shell",
+		},
+		{
+			Monitor{Command: []string{"total", "failure"}},
+			expected{isSuccess: false, hasNotice: true, lastOutput: ""},
+			"Test failed command",
+		},
+		{
+			Monitor{CommandShell: "total failure"},
+			expected{isSuccess: false, hasNotice: true, lastOutput: "sh: total: command not found\n"},
+			"Test failed command shell",
+		},
+	}
+
+	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
+
+		isSuccess, notice := c.monitor.Check()
+		if isSuccess != c.expect.isSuccess {
+			t.Errorf("Check(%v) (success), expected=%t actual=%t", c.name, c.expect.isSuccess, isSuccess)
+			log.Printf("Case failed: %s", c.name)
+		}
+
+		hasNotice := (notice != nil)
+		if hasNotice != c.expect.hasNotice {
+			t.Errorf("Check(%v) (notice), expected=%t actual=%t", c.name, c.expect.hasNotice, hasNotice)
+			log.Printf("Case failed: %s", c.name)
+		}
+
+		lastOutput := c.monitor.lastOutput
+		if lastOutput != c.expect.lastOutput {
+			t.Errorf("Check(%v) (output), expected=%v actual=%v", c.name, c.expect.lastOutput, lastOutput)
+			log.Printf("Case failed: %s", c.name)
+		}
+		log.Println("-----")
+	}
+}
