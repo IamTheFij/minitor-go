@@ -26,10 +26,13 @@ func TestMonitorIsValid(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
 		actual := c.monitor.IsValid()
 		if actual != c.expected {
 			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expected, actual)
+			log.Printf("Case failed: %s", c.name)
 		}
+		log.Println("-----")
 	}
 }
 
@@ -72,10 +75,13 @@ func TestMonitorIsUp(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
 		actual := c.monitor.isUp()
 		if actual != c.expected {
 			t.Errorf("isUp(%v), expected=%t actual=%t", c.name, c.expected, actual)
+			log.Printf("Case failed: %s", c.name)
 		}
+		log.Println("-----")
 	}
 }
 
@@ -92,11 +98,14 @@ func TestMonitorSuccess(t *testing.T) {
 	}
 
 	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
 		notice := c.monitor.success()
 		hasNotice := (notice != nil)
 		if hasNotice != c.expectNotice {
 			t.Errorf("success(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
+			log.Printf("Case failed: %s", c.name)
 		}
+		log.Println("-----")
 	}
 }
 
@@ -109,10 +118,6 @@ func TestMonitorFailureAlertAfter(t *testing.T) {
 		name         string
 	}{
 		{Monitor{AlertAfter: 1}, true, "Empty"}, // Defaults to true because and AlertEvery default to 0
-		// TODO: Update this if meaning of AlertEvery changes
-		{Monitor{failureCount: 0, AlertAfter: 0, AlertEvery: 1}, true, "Alert after 0: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 0, AlertEvery: 1}, true, "Alert after 0: second failure"},
-		// TODO: This one probably shouldn't trigger an alert if AlertAfter is made to behave consistently
 		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 1}, true, "Alert after 1: first failure"},
 		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 1}, true, "Alert after 1: second failure"},
 		{Monitor{failureCount: 0, AlertAfter: 20, AlertEvery: 1}, false, "Alert after 20: first failure"},
@@ -122,7 +127,6 @@ func TestMonitorFailureAlertAfter(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
-
 		notice := c.monitor.failure()
 		hasNotice := (notice != nil)
 		if hasNotice != c.expectNotice {
@@ -150,39 +154,64 @@ func TestMonitorFailureAlertEvery(t *testing.T) {
 
 						For usabilty, this should be consistent. Consistent with what though? minitor-py? Or itself? Dun dun duuuunnnnn!
 		*/
-		{Monitor{}, true, "Empty"}, // Defaults to true because AlertAfter and AlertEvery default to 0
-		// Alert first time only, after 0
-		{Monitor{failureCount: 0, AlertAfter: 0, AlertEvery: 0}, true, "Alert first time only after 0: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 0, AlertEvery: 0}, false, "Alert first time only after 0: second failure"},
+		{Monitor{AlertAfter: 1}, true, "Empty"}, // Defaults to true because AlertAfter and AlertEvery default to 0
 		// Alert first time only, after 1
-		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 0}, false, "Alert first time only after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 0}, true, "Alert first time only after 1: second failure"},
+		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 0}, true, "Alert first time only after 1: first failure"},
+		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 0}, false, "Alert first time only after 1: second failure"},
 		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: 0}, false, "Alert first time only after 1: third failure"},
-		{Monitor{failureCount: 3, AlertAfter: 1, AlertEvery: 0}, false, "Alert first time only after 1: fourth failure"},
-		// Alert every time, after 0
-		{Monitor{failureCount: 0, AlertAfter: 0, AlertEvery: 1}, true, "Alert every time after 0: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 0, AlertEvery: 1}, true, "Alert every time after 0: second failure"},
 		// Alert every time, after 1
-		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 1}, false, "Alert every time after 1: first failure"},
+		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 1}, true, "Alert every time after 1: first failure"},
 		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 1}, true, "Alert every time after 1: second failure"},
 		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 1}, true, "Alert every time after 1: third failure"},
-		// Alert every other time
-		{Monitor{failureCount: 0, AlertAfter: 0, AlertEvery: 2}, true, "Alert every other time after 0: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 0, AlertEvery: 2}, false, "Alert every other time after 0: second failure"},
-		{Monitor{failureCount: 2, AlertAfter: 0, AlertEvery: 2}, true, "Alert every other time after 0: third failure2"},
-		{Monitor{failureCount: 3, AlertAfter: 0, AlertEvery: 2}, false, "Alert every other time after 0: fourth failure"},
 		// Alert every other time, after 1
-		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 2}, false, "Alert every other time after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 2}, true, "Alert every other time after 1: second failure"},
-		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: 2}, false, "Alert every other time after 1: third failure"},
-		{Monitor{failureCount: 3, AlertAfter: 1, AlertEvery: 2}, true, "Alert every other time after 1: fourth failure"},
+		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 2}, true, "Alert every other time after 1: first failure"},
+		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 2}, false, "Alert every other time after 1: second failure"},
+		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: 2}, true, "Alert every other time after 1: third failure"},
+		{Monitor{failureCount: 3, AlertAfter: 1, AlertEvery: 2}, false, "Alert every other time after 1: fourth failure"},
 	}
 
 	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
+
 		notice := c.monitor.failure()
 		hasNotice := (notice != nil)
 		if hasNotice != c.expectNotice {
 			t.Errorf("failure(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
+			log.Printf("Case failed: %s", c.name)
 		}
+		log.Println("-----")
+	}
+}
+
+// TestMonitorFailureExponential tests that alerts will trigger
+// with an exponential backoff after repeated failures
+func TestMonitorFailureExponential(t *testing.T) {
+	cases := []struct {
+		expectNotice bool
+		name         string
+	}{
+		{true, "Alert exponential after 1: first failure"},
+		{true, "Alert exponential after 1: second failure"},
+		{false, "Alert exponential after 1: third failure"},
+		{true, "Alert exponential after 1: fourth failure"},
+		{false, "Alert exponential after 1: fifth failure"},
+		{false, "Alert exponential after 1: sixth failure"},
+		{false, "Alert exponential after 1: seventh failure"},
+		{true, "Alert exponential after 1: eighth failure"},
+	}
+
+	// Unlike previous tests, this one requires a static Monitor with repeated
+	// calls to the failure method
+	monitor := Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: -1}
+	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
+
+		notice := monitor.failure()
+		hasNotice := (notice != nil)
+		if hasNotice != c.expectNotice {
+			t.Errorf("failure(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
+			log.Printf("Case failed: %s", c.name)
+		}
+		log.Println("-----")
 	}
 }
