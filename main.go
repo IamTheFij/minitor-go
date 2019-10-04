@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 )
@@ -12,11 +13,14 @@ func checkMonitors(config *Config) {
 
 			// Should probably consider refactoring everything below here
 			if alertNotice != nil {
-				log.Printf("DEBUG: Recieved an alert notice: %v", alertNotice)
+				log.Printf("DEBUG: Recieved an alert notice from %s", alertNotice.MonitorName)
 				alertNames := monitor.GetAlertNames(alertNotice.IsUp)
 				if alertNames == nil {
 					// TODO: Should this be a panic? Should this be validated against? Probably
-					log.Printf("WARNING: Found alert, but no alert mechanisms exist: %v", alertNotice)
+					log.Printf(
+						"WARNING: Recieved alert, but no alert mechanisms exist. MonitorName=%s IsUp=%t",
+						alertNotice.MonitorName, alertNotice.IsUp,
+					)
 				}
 				for _, alertName := range alertNames {
 					if alert, ok := config.Alerts[alertName]; ok {
@@ -29,12 +33,12 @@ func checkMonitors(config *Config) {
 								output,
 							)
 							// TODO: Maybe return this error instead of panicking here
-							log.Fatalf(
+							panic(fmt.Errorf(
 								"ERROR: Unsuccessfully triggered alert '%s'. "+
 									"Crashing to avoid false negatives: %v",
 								alert.Name,
 								err,
-							)
+							))
 						}
 					} else {
 						// TODO: Maybe panic here. Also, probably validate up front
