@@ -6,7 +6,10 @@ import (
 )
 
 func main() {
-	config := LoadConfig("config.yml")
+	config, err := LoadConfig("config.yml")
+	if err != nil {
+		log.Fatalf("Error loading config: %v", err)
+	}
 
 	for {
 		for _, monitor := range config.Monitors {

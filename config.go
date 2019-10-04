@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
@@ -17,6 +18,12 @@ type Config struct {
 // IsValid checks config validity and returns true if valid
 func (config Config) IsValid() (isValid bool) {
 	isValid = true
+
+	// Validate monitors
+	if config.Monitors == nil || len(config.Monitors) == 0 {
+		log.Printf("ERROR: Invalid monitor configuration: Must provide at least one monitor")
+		isValid = false
+	}
 	for _, monitor := range config.Monitors {
 		if !monitor.IsValid() {
 			log.Printf("ERROR: Invalid monitor configuration: %s", monitor.Name)
@@ -24,6 +31,11 @@ func (config Config) IsValid() (isValid bool) {
 		}
 	}
 
+	// Validate alerts
+	if config.Alerts == nil || len(config.Alerts) == 0 {
+		log.Printf("ERROR: Invalid alert configuration: Must provide at least one alert")
+		isValid = false
+	}
 	for _, alert := range config.Alerts {
 		if !alert.IsValid() {
 			log.Printf("ERROR: Invalid alert configuration: %s", alert.Name)
@@ -35,38 +47,40 @@ func (config Config) IsValid() (isValid bool) {
 }
 
 // Init performs extra initialization on top of loading the config from file
-func (config *Config) Init() {
+func (config *Config) Init() (err error) {
 	for name, alert := range config.Alerts {
 		alert.Name = name
-		if err := alert.BuildTemplates(); err != nil {
-			panic(err)
+		if err = alert.BuildTemplates(); err != nil {
+			return
 		}
 	}
+
+	return
 }
 
 // LoadConfig will read config from the given path and parse it
-func LoadConfig(filePath string) (config Config) {
+func LoadConfig(filePath string) (config Config, err error) {
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		panic(err)
+		return
 	}
 
 	// TODO: Decide if this is better expanded here, or only when executing
 	envExpanded := os.ExpandEnv(string(data))
 	err = yaml.Unmarshal([]byte(envExpanded), &config)
 	if err != nil {
-		log.Fatalf("ERROR: %v", err)
-		panic(err)
+		return
 	}
 
 	log.Printf("config:\n%v\n", config)
 
 	if !config.IsValid() {
-		panic("Cannot continue with invalid configuration")
+		err = errors.New("Invalid configuration")
+		return
 	}
 
 	// Finish initializing configuration
-	config.Init()
+	err = config.Init()
 
-	return config
+	return
 }
