@@ -56,29 +56,27 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	}
 
 	output, err := cmd.CombinedOutput()
-	//log.Printf("Check %s\n---\n%s\n---", monitor.Name, string(output))
-
-	isSuccess := (err == nil)
-	if err != nil {
-		log.Printf("ERROR: %v", err)
-	}
-
 	monitor.lastCheck = time.Now()
 	monitor.lastOutput = string(output)
 
 	var alertNotice *AlertNotice
+	isSuccess := (err == nil)
 	if isSuccess {
 		alertNotice = monitor.success()
 	} else {
 		alertNotice = monitor.failure()
 	}
 
+	// log.Printf("DEBUG: Command output: %s", monitor.lastOutput)
+	if err != nil {
+		log.Printf("DEBUG: Command result: %v", err)
+	}
+
 	log.Printf(
-		"Check result for %s: %v, %v at %v",
+		"INFO: %s success=%t, alert=%t",
 		monitor.Name,
 		isSuccess,
-		alertNotice,
-		monitor.lastCheck,
+		alertNotice != nil,
 	)
 
 	return isSuccess, alertNotice
@@ -89,7 +87,6 @@ func (monitor Monitor) isUp() bool {
 }
 
 func (monitor *Monitor) success() (notice *AlertNotice) {
-	log.Printf("Great success!")
 	if !monitor.isUp() {
 		// Alert that we have recovered
 		notice = monitor.createAlertNotice(true)
@@ -102,20 +99,23 @@ func (monitor *Monitor) success() (notice *AlertNotice) {
 }
 
 func (monitor *Monitor) failure() (notice *AlertNotice) {
-	log.Printf("Devastating failure. :(")
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
 	if monitor.failureCount < monitor.getAlertAfter() {
 		log.Printf(
-			"Have not hit minimum failures. failures: %v alert after: %v",
+			"DEBUG: %s failed but did not hit minimum failures. "+
+				"Count: %v alert after: %v",
+			monitor.Name,
 			monitor.failureCount,
 			monitor.getAlertAfter(),
 		)
 		return
 	}
 
+	// Take number of failures after minimum
 	failureCount := (monitor.failureCount - monitor.getAlertAfter())
 
+	// Use alert cadence to determine if we should alert
 	if monitor.AlertEvery > 0 {
 		// Handle integer number of failures before alerting
 		if failureCount%monitor.AlertEvery == 0 {
@@ -133,6 +133,7 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 		}
 	}
 
+	// If we're going to alert, increment count
 	if notice != nil {
 		monitor.alertCount++
 	}
@@ -147,6 +148,15 @@ func (monitor Monitor) getAlertAfter() int16 {
 		return 1
 	} else {
 		return monitor.AlertAfter
+	}
+}
+
+// GetAlertNames gives a list of alert names for a given monitor status
+func (monitor Monitor) GetAlertNames(up bool) []string {
+	if up {
+		return monitor.AlertUp
+	} else {
+		return monitor.AlertDown
 	}
 }
 

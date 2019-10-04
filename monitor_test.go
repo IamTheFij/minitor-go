@@ -85,6 +85,31 @@ func TestMonitorIsUp(t *testing.T) {
 	}
 }
 
+// TestMonitorGetAlertNames tests that proper alert names are returned
+func TestMonitorGetAlertNames(t *testing.T) {
+	cases := []struct {
+		monitor  Monitor
+		up       bool
+		expected []string
+		name     string
+	}{
+		{Monitor{}, true, nil, "Empty up"},
+		{Monitor{}, false, nil, "Empty down"},
+		{Monitor{AlertUp: []string{"alert"}}, true, []string{"alert"}, "Return up"},
+		{Monitor{AlertDown: []string{"alert"}}, false, []string{"alert"}, "Return down"},
+	}
+
+	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
+		actual := c.monitor.GetAlertNames(c.up)
+		if !EqualSliceString(actual, c.expected) {
+			t.Errorf("GetAlertNames(%v), expected=%v actual=%v", c.name, c.expected, actual)
+			log.Printf("Case failed: %s", c.name)
+		}
+		log.Println("-----")
+	}
+}
+
 // TestMonitorSuccess tests the Monitor.success()
 func TestMonitorSuccess(t *testing.T) {
 	cases := []struct {

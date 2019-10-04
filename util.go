@@ -21,3 +21,16 @@ func ShellCommand(command string) *exec.Cmd {
 	//log.Printf("Shell command: %v", shellCommand)
 	return exec.Command(shellCommand[0], shellCommand[1:]...)
 }
+
+// EqualSliceString checks if two string slices are equivalent
+func EqualSliceString(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, val := range a {
+		if val != b[i] {
+			return false
+		}
+	}
+	return true
+}

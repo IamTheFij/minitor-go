@@ -8,7 +8,7 @@ Initial target is meant to be roughly compatible requiring only minor changes to
 
 ## Differences from Python version
 
-There are a few key differences between the Python version and the v0.x Go version. 
+There are a few key differences between the Python version and the v0.x Go version.
 
 First, configuration keys cannot have multiple types in Go, so a different key must be used when specifying a Shell command as a string rather than a list of args. Instead of `command`, you must use `command_shell`. Eg:
 

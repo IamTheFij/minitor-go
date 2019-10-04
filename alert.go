@@ -38,18 +38,15 @@ func (alert Alert) IsValid() bool {
 
 // BuildTemplates compiles command templates for the Alert
 func (alert *Alert) BuildTemplates() error {
+	log.Printf("DEBUG: Building template for alert %s", alert.Name)
 	if alert.commandTemplate == nil && alert.Command != nil {
-		// build template
-		log.Println("Building template for command...")
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command {
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+string(i)).Parse(cmdPart),
 			))
 		}
-		log.Printf("Template built: %v", alert.commandTemplate)
 	} else if alert.commandShellTemplate == nil && alert.CommandShell != "" {
-		log.Println("Building template for shell command...")
 		alert.commandShellTemplate = template.Must(
 			template.New(alert.Name).Parse(alert.CommandShell),
 		)
@@ -96,7 +93,7 @@ func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
 	var output []byte
 	output, err = cmd.CombinedOutput()
 	output_str = string(output)
-	log.Printf("Check %s\n---\n%s\n---", alert.Name, output_str)
+	// log.Printf("DEBUG: Alert output for: %s\n---\n%s\n---", alert.Name, output_str)
 
 	return output_str, err
 }
