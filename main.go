@@ -15,7 +15,7 @@ var (
 	version = "dev"
 )
 
-func checkMonitors(config *Config) {
+func checkMonitors(config *Config) error {
 	for _, monitor := range config.Monitors {
 		if monitor.ShouldCheck() {
 			_, alertNotice := monitor.Check()
@@ -43,13 +43,12 @@ func checkMonitors(config *Config) {
 								err,
 								output,
 							)
-							// TODO: Maybe return this error instead of panicking here
-							panic(fmt.Errorf(
+							return fmt.Errorf(
 								"ERROR: Unsuccessfully triggered alert '%s'. "+
 									"Crashing to avoid false negatives: %v",
 								alert.Name,
 								err,
-							))
+							)
 						}
 					} else {
 						// TODO: Maybe panic here. Also, probably validate up front
@@ -59,6 +58,8 @@ func checkMonitors(config *Config) {
 			}
 		}
 	}
+
+	return nil
 }
 
 func main() {
@@ -81,7 +82,10 @@ func main() {
 
 	// Start main loop
 	for {
-		checkMonitors(&config)
+		err = checkMonitors(&config)
+		if err != nil {
+			panic(err)
+		}
 
 		sleepTime := time.Duration(config.CheckInterval) * time.Second
 		time.Sleep(sleepTime)

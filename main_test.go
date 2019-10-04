@@ -4,14 +4,14 @@ import "testing"
 
 func TestCheckMonitors(t *testing.T) {
 	cases := []struct {
-		config      Config
-		expectPanic bool
-		name        string
+		config    Config
+		expectErr bool
+		name      string
 	}{
 		{
-			config:      Config{},
-			expectPanic: false,
-			name:        "Empty",
+			config:    Config{},
+			expectErr: false,
+			name:      "Empty",
 		},
 		{
 			config: Config{
@@ -22,8 +22,8 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectPanic: false,
-			name:        "Monitor success, no alerts",
+			expectErr: false,
+			name:      "Monitor success, no alerts",
 		},
 		{
 			config: Config{
@@ -41,8 +41,8 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectPanic: false,
-			name:        "Monitor failure, no and unknown alerts",
+			expectErr: false,
+			name:      "Monitor failure, no and unknown alerts",
 		},
 		{
 			config: Config{
@@ -60,8 +60,8 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectPanic: false,
-			name:        "Monitor recovery, no alerts",
+			expectErr: false,
+			name:      "Monitor recovery, no alerts",
 		},
 		{
 			config: Config{
@@ -79,8 +79,8 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectPanic: false,
-			name:        "Monitor failure, successful alert",
+			expectErr: false,
+			name:      "Monitor failure, successful alert",
 		},
 		{
 			config: Config{
@@ -99,24 +99,16 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectPanic: true,
-			name:        "Monitor failure, bad alert",
+			expectErr: true,
+			name:      "Monitor failure, bad alert",
 		},
 	}
 
 	for _, c := range cases {
-		// Create new function so that deferred recovery can run at end of each test case
-		func() {
-			// Set up recover to catch panic
-			defer func() {
-				if r := recover(); r == nil {
-					if c.expectPanic {
-						t.Errorf("checkMonitors(%s): Expected panic, the code did not panic", c.name)
-					}
-				}
-			}()
-			c.config.Init()
-			checkMonitors(&c.config)
-		}()
+		c.config.Init()
+		err := checkMonitors(&c.config)
+		if err == nil && c.expectErr {
+			t.Errorf("checkMonitors(%s): Expected panic, the code did not panic", c.name)
+		}
 	}
 }
