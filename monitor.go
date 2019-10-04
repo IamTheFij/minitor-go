@@ -67,9 +67,13 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 		alertNotice = monitor.failure()
 	}
 
-	// log.Printf("DEBUG: Command output: %s", monitor.lastOutput)
+	if LogDebug {
+		log.Printf("DEBUG: Command output: %s", monitor.lastOutput)
+	}
 	if err != nil {
-		log.Printf("DEBUG: Command result: %v", err)
+		if LogDebug {
+			log.Printf("DEBUG: Command result: %v", err)
+		}
 	}
 
 	log.Printf(
@@ -102,13 +106,15 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
 	if monitor.failureCount < monitor.getAlertAfter() {
-		log.Printf(
-			"DEBUG: %s failed but did not hit minimum failures. "+
-				"Count: %v alert after: %v",
-			monitor.Name,
-			monitor.failureCount,
-			monitor.getAlertAfter(),
-		)
+		if LogDebug {
+			log.Printf(
+				"DEBUG: %s failed but did not hit minimum failures. "+
+					"Count: %v alert after: %v",
+				monitor.Name,
+				monitor.failureCount,
+				monitor.getAlertAfter(),
+			)
+		}
 		return
 	}
 

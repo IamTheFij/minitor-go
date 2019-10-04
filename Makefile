@@ -9,7 +9,7 @@ minitor-go:
 
 .PHONY: run
 run: minitor-go
-	./minitor-go
+	./minitor-go -debug
 
 .PHONY: test
 test:

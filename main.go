@@ -1,10 +1,14 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"time"
 )
+
+// LogDebug will control whether debug messsages should be logged
+var LogDebug bool = false
 
 func checkMonitors(config *Config) {
 	for _, monitor := range config.Monitors {
@@ -13,7 +17,9 @@ func checkMonitors(config *Config) {
 
 			// Should probably consider refactoring everything below here
 			if alertNotice != nil {
-				log.Printf("DEBUG: Recieved an alert notice from %s", alertNotice.MonitorName)
+				if LogDebug {
+					log.Printf("DEBUG: Recieved an alert notice from %s", alertNotice.MonitorName)
+				}
 				alertNames := monitor.GetAlertNames(alertNotice.IsUp)
 				if alertNames == nil {
 					// TODO: Should this be a panic? Should this be validated against? Probably
@@ -51,6 +57,10 @@ func checkMonitors(config *Config) {
 }
 
 func main() {
+	// Get debug flag
+	flag.BoolVar(&LogDebug, "debug", false, "Enables debug logs (default: false)")
+	flag.Parse()
+
 	config, err := LoadConfig("config.yml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)

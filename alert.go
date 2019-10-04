@@ -38,7 +38,9 @@ func (alert Alert) IsValid() bool {
 
 // BuildTemplates compiles command templates for the Alert
 func (alert *Alert) BuildTemplates() error {
-	log.Printf("DEBUG: Building template for alert %s", alert.Name)
+	if LogDebug {
+		log.Printf("DEBUG: Building template for alert %s", alert.Name)
+	}
 	if alert.commandTemplate == nil && alert.Command != nil {
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command {
@@ -59,6 +61,7 @@ func (alert *Alert) BuildTemplates() error {
 
 // Send will send an alert notice by executing the command template
 func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
+	log.Printf("INFO: Sending alert %s for %s", alert.Name, notice.MonitorName)
 	var cmd *exec.Cmd
 	if alert.commandTemplate != nil {
 		command := []string{}
@@ -93,7 +96,9 @@ func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
 	var output []byte
 	output, err = cmd.CombinedOutput()
 	output_str = string(output)
-	// log.Printf("DEBUG: Alert output for: %s\n---\n%s\n---", alert.Name, output_str)
+	if LogDebug {
+		log.Printf("DEBUG: Alert output for: %s\n---\n%s\n---", alert.Name, output_str)
+	}
 
 	return output_str, err
 }
