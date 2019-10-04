@@ -7,8 +7,13 @@ import (
 	"time"
 )
 
-// LogDebug will control whether debug messsages should be logged
-var LogDebug bool = false
+var (
+	// LogDebug will control whether debug messsages should be logged
+	LogDebug = false
+
+	// version of minitor being run
+	version = "dev"
+)
 
 func checkMonitors(config *Config) {
 	for _, monitor := range config.Monitors {
@@ -59,8 +64,16 @@ func checkMonitors(config *Config) {
 func main() {
 	// Get debug flag
 	flag.BoolVar(&LogDebug, "debug", false, "Enables debug logs (default: false)")
+	var showVersion = flag.Bool("version", false, "Display the version of minitor and exit")
 	flag.Parse()
 
+	// Print version if flag is provided
+	if *showVersion {
+		fmt.Println("Minitor version:", version)
+		return
+	}
+
+	// Load configuration
 	config, err := LoadConfig("config.yml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
