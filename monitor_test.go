@@ -13,16 +13,16 @@ func TestMonitorIsValid(t *testing.T) {
 		expected bool
 		name     string
 	}{
-		{Monitor{Command: []string{"echo", "test"}}, true, "Command only"},
-		{Monitor{CommandShell: "echo test"}, true, "CommandShell only"},
-		{Monitor{}, false, "No commands"},
+		{Monitor{Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, true, "Command only"},
+		{Monitor{CommandShell: "echo test", AlertDown: []string{"log"}}, true, "CommandShell only"},
+		{Monitor{Command: []string{"echo", "test"}}, false, "No AlertDown"},
+		{Monitor{AlertDown: []string{"log"}}, false, "No commands"},
 		{
-			Monitor{Command: []string{"echo", "test"}, CommandShell: "echo test"},
+			Monitor{Command: []string{"echo", "test"}, CommandShell: "echo test", AlertDown: []string{"log"}},
 			false,
 			"Both commands",
 		},
-		{Monitor{AlertAfter: -1}, false, "Invalid alert threshold, -1"},
-		{Monitor{AlertAfter: 0}, false, "Invalid alert threshold, 0"},
+		{Monitor{Command: []string{"echo", "test"}, AlertDown: []string{"log"}, AlertAfter: -1}, false, "Invalid alert threshold, -1"},
 	}
 
 	for _, c := range cases {

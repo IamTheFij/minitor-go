@@ -31,7 +31,10 @@ type Monitor struct {
 func (monitor Monitor) IsValid() bool {
 	atLeastOneCommand := (monitor.CommandShell != "" || monitor.Command != nil)
 	atMostOneCommand := (monitor.CommandShell == "" || monitor.Command == nil)
-	return atLeastOneCommand && atMostOneCommand && monitor.getAlertAfter() > 0
+	return (atLeastOneCommand &&
+		atMostOneCommand &&
+		monitor.getAlertAfter() > 0 &&
+		monitor.AlertDown != nil)
 }
 
 // ShouldCheck returns a boolean indicating if the Monitor is ready to be
