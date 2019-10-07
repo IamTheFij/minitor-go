@@ -27,7 +27,7 @@ func checkMonitors(config *Config) error {
 				}
 				alertNames := monitor.GetAlertNames(alertNotice.IsUp)
 				if alertNames == nil {
-					// TODO: Should this be a panic? Should this be validated against? Probably
+					// This should only happen for a recovery alert. AlertDown is validated not empty
 					log.Printf(
 						"WARNING: Recieved alert, but no alert mechanisms exist. MonitorName=%s IsUp=%t",
 						alertNotice.MonitorName, alertNotice.IsUp,
@@ -44,15 +44,16 @@ func checkMonitors(config *Config) error {
 								output,
 							)
 							return fmt.Errorf(
-								"ERROR: Unsuccessfully triggered alert '%s'. "+
+								"Unsuccessfully triggered alert '%s'. "+
 									"Crashing to avoid false negatives: %v",
 								alert.Name,
 								err,
 							)
 						}
 					} else {
-						// TODO: Maybe panic here. Also, probably validate up front
-						log.Printf("ERROR: Alert with name '%s' not found", alertName)
+						// This case should never actually happen since we validate against it
+						log.Printf("ERROR: Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
+						return fmt.Errorf("Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
 					}
 				}
 			}

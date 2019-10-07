@@ -29,6 +29,18 @@ func (config Config) IsValid() (isValid bool) {
 			log.Printf("ERROR: Invalid monitor configuration: %s", monitor.Name)
 			isValid = false
 		}
+		// Check that all Monitor alerts actually exist
+		for _, isUp := range []bool{true, false} {
+			for _, alertName := range monitor.GetAlertNames(isUp) {
+				if _, ok := config.Alerts[alertName]; !ok {
+					log.Printf(
+						"ERROR: Invalid monitor configuration: %s. Unknown alert %s",
+						monitor.Name, alertName,
+					)
+					isValid = false
+				}
+			}
+		}
 	}
 
 	// Validate alerts

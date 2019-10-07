@@ -15,6 +15,7 @@ func TestLoadConfig(t *testing.T) {
 		{"./test/does-not-exist", true, "Invalid config path"},
 		{"./test/invalid-config-type.yml", true, "Invalid config type for key"},
 		{"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts"},
+		{"./test/invalid-config-unknown-alert.yml", true, "Invalid config unknown alert"},
 	}
 
 	for _, c := range cases {
