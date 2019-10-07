@@ -269,8 +269,8 @@ func TestMonitorCheck(t *testing.T) {
 			"Test failed command",
 		},
 		{
-			Monitor{CommandShell: "total failure"},
-			expected{isSuccess: false, hasNotice: true, lastOutput: "sh: total: command not found\n"},
+			Monitor{CommandShell: "false"},
+			expected{isSuccess: false, hasNotice: true, lastOutput: ""},
 			"Test failed command shell",
 		},
 	}
