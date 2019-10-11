@@ -1,3 +1,5 @@
+DOCKER_TAG ?= minitor-go-${USER}
+
 .PHONY: test
 default: test
 
@@ -27,3 +29,11 @@ test:
 clean:
 	rm -f ./minitor-go
 	rm -f ./coverage.out
+
+.PHONY: docker-build
+docker-build:
+	docker build -f ./Dockerfile.multi-stage -t $(DOCKER_TAG) .
+
+.PHONY: docker-run
+docker-run: docker-build
+	docker run --rm -v $(shell pwd)/config.yml:/root/config.yml $(DOCKER_TAG)

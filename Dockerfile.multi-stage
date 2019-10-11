@@ -1,0 +1,23 @@
+ARG REPO=library
+FROM golang:1.12-alpine AS builder
+
+RUN apk add --no-cache git
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY ./go.mod ./go.sum /app/
+RUN go mod download
+
+COPY ./*.go /app/
+
+ARG ARCH=amd64
+ARG VERSION=dev
+ENV CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH}
+RUN go build -ldflags "-X main.version=${VERSION}" -a -installsuffix nocgo -o minitor .
+
+FROM ${REPO}/busybox:latest
+WORKDIR /root/
+COPY --from=builder /app/minitor .
+
+ENTRYPOINT [ "./minitor" ]
