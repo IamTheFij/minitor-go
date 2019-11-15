@@ -84,7 +84,9 @@ func LoadConfig(filePath string) (config Config, err error) {
 		return
 	}
 
-	log.Printf("config:\n%v\n", config)
+	if LogDebug {
+		log.Printf("DEBUG: Config values:\n%v\n", config)
+	}
 
 	if !config.IsValid() {
 		err = errors.New("Invalid configuration")

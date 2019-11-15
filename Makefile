@@ -1,6 +1,7 @@
+.PHONY: all
 DOCKER_TAG ?= minitor-go-${USER}
 
-.PHONY: test
+.PHONY: default
 default: test
 
 .PHONY: build
@@ -12,7 +13,7 @@ minitor-go:
 
 .PHONY: run
 run: minitor-go build
-	./minitor-go -debug
+	./minitor-go -debug -metrics
 
 .PHONY: test
 test:
@@ -23,7 +24,6 @@ test:
 	@# Check min coverage percentage
 	@go tool cover -func=coverage.out | awk -v target=80.0% \
 		'/^total:/ { print "Total coverage: " $$3 " Minimum coverage: " target; if ($$3+0.0 >= target+0.0) print "ok"; else { print "fail"; exit 1; } }'
-
 
 .PHONY: clean
 clean:

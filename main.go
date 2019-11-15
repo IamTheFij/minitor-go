@@ -11,6 +11,13 @@ var (
 	// LogDebug will control whether debug messsages should be logged
 	LogDebug = false
 
+	// ExportMetrics will track whether or not we want to export metrics to prometheus
+	ExportMetrics = false
+	// MetricsPort is the port to expose metrics on
+	MetricsPort = 8080
+	// Metrics contains all active metrics
+	Metrics = NewMetrics()
+
 	// version of minitor being run
 	version = "dev"
 )
@@ -18,7 +25,13 @@ var (
 func checkMonitors(config *Config) error {
 	for _, monitor := range config.Monitors {
 		if monitor.ShouldCheck() {
-			_, alertNotice := monitor.Check()
+			success, alertNotice := monitor.Check()
+
+			hasAlert := alertNotice != nil
+
+			// Track status metrics
+			Metrics.SetMonitorStatus(monitor.Name, success)
+			Metrics.CountCheck(monitor.Name, success, hasAlert)
 
 			// Should probably consider refactoring everything below here
 			if alertNotice != nil {
@@ -50,6 +63,9 @@ func checkMonitors(config *Config) error {
 								err,
 							)
 						}
+
+						// Count alert metrics
+						Metrics.CountAlert(monitor.Name, alert.Name)
 					} else {
 						// This case should never actually happen since we validate against it
 						log.Printf("ERROR: Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
@@ -66,12 +82,13 @@ func checkMonitors(config *Config) error {
 func main() {
 	// Get debug flag
 	flag.BoolVar(&LogDebug, "debug", false, "Enables debug logs (default: false)")
+	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
 	var showVersion = flag.Bool("version", false, "Display the version of minitor and exit")
 	flag.Parse()
 
 	// Print version if flag is provided
 	if *showVersion {
-		fmt.Println("Minitor version:", version)
+		log.Println("Minitor version:", version)
 		return
 	}
 
@@ -79,6 +96,12 @@ func main() {
 	config, err := LoadConfig("config.yml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
+	}
+
+	// Serve metrics exporter, if specified
+	if ExportMetrics {
+		log.Println("INFO: Exporting metrics to Prometheus")
+		go ServeMetrics()
 	}
 
 	// Start main loop
