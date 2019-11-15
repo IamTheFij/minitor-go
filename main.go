@@ -3,13 +3,18 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
+	"net/http"
 	"time"
 )
 
 var (
 	// LogDebug will control whether debug messsages should be logged
 	LogDebug = false
+
+	// ExportMetrics will track whether or not we want to export metrics to prometheus
+	ExportMetrics = false
 
 	// version of minitor being run
 	version = "dev"
@@ -63,15 +68,21 @@ func checkMonitors(config *Config) error {
 	return nil
 }
 
+func serveMetrics() {
+	http.Handle("/metrics", promhttp.Handler())
+	_ = http.ListenAndServe(":8080", nil)
+}
+
 func main() {
 	// Get debug flag
 	flag.BoolVar(&LogDebug, "debug", false, "Enables debug logs (default: false)")
+	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
 	var showVersion = flag.Bool("version", false, "Display the version of minitor and exit")
 	flag.Parse()
 
 	// Print version if flag is provided
 	if *showVersion {
-		fmt.Println("Minitor version:", version)
+		log.Println("Minitor version:", version)
 		return
 	}
 
@@ -79,6 +90,12 @@ func main() {
 	config, err := LoadConfig("config.yml")
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
+	}
+
+	// Serve metrics exporter, if specified
+	if ExportMetrics {
+		log.Println("INFO: Exporting metrics to Prometheus")
+		go serveMetrics()
 	}
 
 	// Start main loop
