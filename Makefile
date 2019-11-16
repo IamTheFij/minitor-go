@@ -13,6 +13,10 @@ minitor-go:
 
 .PHONY: run
 run: minitor-go build
+	./minitor-go -debug
+
+.PHONY: run-metrics
+run-metrics: minitor-go build
 	./minitor-go -debug -metrics
 
 .PHONY: test
