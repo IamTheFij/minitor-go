@@ -2,7 +2,7 @@
 
 A reimplementation of [Minitor](https://git.iamthefij/iamthefij/minitor) in Go
 
-Minitor is already a very minimal monitoring tool. Python 3 was a quick way to get something live, but Python itself comes with a very large footprint.Thus Go feels like a better fit for the project, longer term.
+Minitor is already a minimal monitoring tool. Python 3 was a quick way to get something live, but Python itself comes with a large footprint. Thus Go feels like a better fit for the project, longer term.
 
 Initial target is meant to be roughly compatible requiring only minor changes to configuration. Future iterations may diverge to take advantage of Go specific features.
 
@@ -38,7 +38,7 @@ alerts:
   log_command:
     command: ['echo', '{monitor_name}']
   log_shell:
-    command_shell: "echo {monitor_name}"
+    command_shell: 'echo {monitor_name}'
 ```
 
 minitor-go:
@@ -47,7 +47,7 @@ alerts:
   log_command:
     command: ['echo', '{{.MonitorName}}']
   log_shell:
-    command_shell: "echo {{.MonitorName}}"
+    command_shell: 'echo {{.MonitorName}}'
 ```
 
 Finally, newlines in a shell command don't terminate a particular command. Semicolons must be used and continuations should not.
@@ -84,10 +84,10 @@ Pairity:
   - [x] Run alert commands
   - [x] Run alert commands in a shell
   - [x] Allow templating of alert commands
-  - [ ] Implement Prometheus client to export metrics
+  - [x] Implement Prometheus client to export metrics
   - [ ] Test coverage
 
-Improvement:
+Improvement (potentially breaking):
 
   - [ ] Implement leveled logging (maybe glog or logrus)
   - [ ] Consider switching from YAML to TOML
@@ -95,3 +95,4 @@ Improvement:
   - [ ] Consider dropping `alert_up` and `alert_down` in favor of using Go templates that offer more control of messaging
   - [ ] Async checking
   - [ ] Use durations rather than seconds checked in event loop
+  - [ ] Revisit metrics and see if they all make sense
