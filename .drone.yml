@@ -1,3 +1,4 @@
+---
 kind: pipeline
 name: test
 
@@ -11,3 +12,45 @@ steps:
     image: golang:1.12
     commands:
       - make test
+
+  - name: notify
+    image: drillster/drone-email
+    settings:
+      host:
+        from_secret: SMTP_HOST
+      username:
+        from_secret: SMTP_USER
+      password:
+        from_secret: SMTP_PASS
+      from: drone@iamthefij.com
+    when:
+      status: [changed, failure]
+
+---
+kind: pipeline
+name: publish
+
+depends_on:
+  - test
+
+trigger:
+  event:
+    - push
+    - tag
+  refs:
+    - refs/heads/master
+    - refs/tags/v*
+
+steps:
+
+  # Might consider moving this step into the previous pipeline
+  - name: push image
+    image: plugins/docker
+    settings:
+      repo: iamthefij/minitor-go
+      dockerfile: Dockerfile.multi-stage
+      auto_tag: true
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
