@@ -30,7 +30,7 @@ monitors:
     command_shell: echo 'test'
 ```
 
-Second, templating for Alert messages has been updated. In the Python version, `str.format(...)` was used with certain keys passed in that could be used to format messages. In the Go version, we use a struct containing Alert info and the built in Go templating format. Eg.
+Second, templating for Alert messages has been updated. In the Python version, `str.format(...)` was used with certain keys passed in that could be used to format messages. In the Go version, we use a struct, `AlertNotice` defined in `alert.go` and the built in Go templating format. Eg.
 
 minitor-py:
 ```yaml
@@ -85,7 +85,8 @@ Pairity:
   - [x] Run alert commands in a shell
   - [x] Allow templating of alert commands
   - [x] Implement Prometheus client to export metrics
-  - [ ] Test coverage
+  - [x] Test coverage
+  - [ ] Integration testing (manual or otherwise)
 
 Improvement (potentially breaking):
 
