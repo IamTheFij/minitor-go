@@ -3,19 +3,11 @@ kind: pipeline
 name: test
 
 steps:
-  - name: download modules
-    image: golang:1.12
-    commands:
-      - go mod download
-
-  - name: build
-    image: golang:1.12
-    commands:
-      - make build
 
   - name: test
     image: golang:1.12
     commands:
+      - make build
       - make test
 
   - name: check
