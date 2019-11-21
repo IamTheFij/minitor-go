@@ -13,6 +13,12 @@ steps:
     commands:
       - make test
 
+  - name: check
+    image: python:3
+    commands:
+      - pip install pre-commit==1.20.0
+      - make check
+
   - name: notify
     image: drillster/drone-email
     settings:

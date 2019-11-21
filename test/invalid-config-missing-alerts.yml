@@ -6,4 +6,3 @@ monitors:
     alert_down: [ 'alert_down', 'log_shell', 'log_command' ]
     # alert_every: -1
     alert_every: 0
-
