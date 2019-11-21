@@ -3,14 +3,11 @@ kind: pipeline
 name: test
 
 steps:
-  - name: build
-    image: golang:1.12
-    commands:
-      - make build
 
   - name: test
     image: golang:1.12
     commands:
+      - make build
       - make test
 
   - name: check
