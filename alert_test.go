@@ -1,8 +1,9 @@
 package main
 
 import (
-	"log"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func TestAlertIsValid(t *testing.T) {
@@ -22,13 +23,13 @@ func TestAlertIsValid(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		log.Printf("Testing case %s", c.name)
+		log.Debugf("Testing case %s", c.name)
 		actual := c.alert.IsValid()
 		if actual != c.expected {
 			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expected, actual)
-			log.Printf("Case failed: %s", c.name)
+			log.Debugf("Case failed: %s", c.name)
 		}
-		log.Println("-----")
+		log.Debugf("-----")
 	}
 }
 
@@ -71,19 +72,19 @@ func TestAlertSend(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		log.Printf("Testing case %s", c.name)
+		log.Debugf("Testing case %s", c.name)
 		c.alert.BuildTemplates()
 		output, err := c.alert.Send(c.notice)
 		hasErr := (err != nil)
 		if output != c.expectedOutput {
 			t.Errorf("Send(%v output), expected=%v actual=%v", c.name, c.expectedOutput, output)
-			log.Printf("Case failed: %s", c.name)
+			log.Debugf("Case failed: %s", c.name)
 		}
 		if hasErr != c.expectErr {
 			t.Errorf("Send(%v err), expected=%v actual=%v", c.name, "Err", err)
-			log.Printf("Case failed: %s", c.name)
+			log.Debugf("Case failed: %s", c.name)
 		}
-		log.Println("-----")
+		log.Debugf("-----")
 	}
 }
 
@@ -94,7 +95,7 @@ func TestAlertSendNoTemplates(t *testing.T) {
 	if err == nil {
 		t.Errorf("Send(no template), expected=%v actual=%v", "Err", output)
 	}
-	log.Println("-----")
+	log.Debugf("-----")
 }
 
 func TestAlertBuildTemplate(t *testing.T) {
@@ -109,13 +110,13 @@ func TestAlertBuildTemplate(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		log.Printf("Testing case %s", c.name)
+		log.Debugf("Testing case %s", c.name)
 		err := c.alert.BuildTemplates()
 		hasErr := (err != nil)
 		if hasErr != c.expectErr {
 			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expectErr, err)
-			log.Printf("Case failed: %s", c.name)
+			log.Debugf("Case failed: %s", c.name)
 		}
-		log.Println("-----")
+		log.Debugf("-----")
 	}
 }

@@ -3,14 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 var (
-	// LogDebug will control whether debug messsages should be logged
-	LogDebug = false
-
 	// ExportMetrics will track whether or not we want to export metrics to prometheus
 	ExportMetrics = false
 	// MetricsPort is the port to expose metrics on
@@ -35,9 +33,7 @@ func checkMonitors(config *Config) error {
 
 			// Should probably consider refactoring everything below here
 			if alertNotice != nil {
-				if LogDebug {
-					log.Printf("DEBUG: Recieved an alert notice from %s", alertNotice.MonitorName)
-				}
+				log.Debugf("Recieved an alert notice from %s", alertNotice.MonitorName)
 				alertNames := monitor.GetAlertNames(alertNotice.IsUp)
 				if alertNames == nil {
 					// This should only happen for a recovery alert. AlertDown is validated not empty
@@ -81,10 +77,15 @@ func checkMonitors(config *Config) error {
 
 func main() {
 	// Get debug flag
-	flag.BoolVar(&LogDebug, "debug", false, "Enables debug logs (default: false)")
+	var debug = flag.Bool("debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
 	var showVersion = flag.Bool("version", false, "Display the version of minitor and exit")
 	flag.Parse()
+
+	// Set debug if flag is set
+	if *debug {
+		log.SetLevel(log.DebugLevel)
+	}
 
 	// Print version if flag is provided
 	if *showVersion {

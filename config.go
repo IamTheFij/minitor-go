@@ -3,9 +3,9 @@ package main
 import (
 	"errors"
 	"io/ioutil"
-	"log"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -22,20 +22,20 @@ func (config Config) IsValid() (isValid bool) {
 
 	// Validate monitors
 	if config.Monitors == nil || len(config.Monitors) == 0 {
-		log.Printf("ERROR: Invalid monitor configuration: Must provide at least one monitor")
+		log.Errorf("Invalid monitor configuration: Must provide at least one monitor")
 		isValid = false
 	}
 	for _, monitor := range config.Monitors {
 		if !monitor.IsValid() {
-			log.Printf("ERROR: Invalid monitor configuration: %s", monitor.Name)
+			log.Errorf("Invalid monitor configuration: %s", monitor.Name)
 			isValid = false
 		}
 		// Check that all Monitor alerts actually exist
 		for _, isUp := range []bool{true, false} {
 			for _, alertName := range monitor.GetAlertNames(isUp) {
 				if _, ok := config.Alerts[alertName]; !ok {
-					log.Printf(
-						"ERROR: Invalid monitor configuration: %s. Unknown alert %s",
+					log.Errorf(
+						"Invalid monitor configuration: %s. Unknown alert %s",
 						monitor.Name, alertName,
 					)
 					isValid = false
@@ -46,12 +46,12 @@ func (config Config) IsValid() (isValid bool) {
 
 	// Validate alerts
 	if config.Alerts == nil || len(config.Alerts) == 0 {
-		log.Printf("ERROR: Invalid alert configuration: Must provide at least one alert")
+		log.Errorf("Invalid alert configuration: Must provide at least one alert")
 		isValid = false
 	}
 	for _, alert := range config.Alerts {
 		if !alert.IsValid() {
-			log.Printf("ERROR: Invalid alert configuration: %s", alert.Name)
+			log.Errorf("Invalid alert configuration: %s", alert.Name)
 			isValid = false
 		}
 	}
@@ -85,9 +85,7 @@ func LoadConfig(filePath string) (config Config, err error) {
 		return
 	}
 
-	if LogDebug {
-		log.Printf("DEBUG: Config values:\n%v\n", config)
-	}
+	log.Debugf("Config values:\n%v\n", config)
 
 	if !config.IsValid() {
 		err = errors.New("Invalid configuration")

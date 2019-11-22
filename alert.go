@@ -3,10 +3,11 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os/exec"
 	"text/template"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Alert is a config driven mechanism for sending a notice
@@ -38,9 +39,7 @@ func (alert Alert) IsValid() bool {
 
 // BuildTemplates compiles command templates for the Alert
 func (alert *Alert) BuildTemplates() error {
-	if LogDebug {
-		log.Printf("DEBUG: Building template for alert %s", alert.Name)
-	}
+	log.Debugf("Building template for alert %s", alert.Name)
 	if alert.commandTemplate == nil && alert.Command != nil {
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command {
@@ -60,8 +59,8 @@ func (alert *Alert) BuildTemplates() error {
 }
 
 // Send will send an alert notice by executing the command template
-func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
-	log.Printf("INFO: Sending alert %s for %s", alert.Name, notice.MonitorName)
+func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
+	log.Infof("Sending alert %s for %s", alert.Name, notice.MonitorName)
 	var cmd *exec.Cmd
 	if alert.commandTemplate != nil {
 		command := []string{}
@@ -95,10 +94,8 @@ func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
 
 	var output []byte
 	output, err = cmd.CombinedOutput()
-	output_str = string(output)
-	if LogDebug {
-		log.Printf("DEBUG: Alert output for: %s\n---\n%s\n---", alert.Name, output_str)
-	}
+	outputStr = string(output)
+	log.Debugf("Alert output for: %s\n---\n%s\n---", alert.Name, outputStr)
 
-	return output_str, err
+	return outputStr, err
 }

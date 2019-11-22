@@ -1,10 +1,11 @@
 package main
 
 import (
-	"log"
 	"math"
 	"os/exec"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // Monitor represents a particular periodic check of a command
@@ -70,20 +71,18 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 		alertNotice = monitor.failure()
 	}
 
-	if LogDebug {
-		log.Printf("DEBUG: Command output: %s", monitor.lastOutput)
-	}
+	log.Debugf("Command output: %s", monitor.lastOutput)
 	if err != nil {
-		if LogDebug {
-			log.Printf("DEBUG: Command result: %v", err)
-		}
+		log.Debugf("Command result: %v", err)
 	}
 
-	log.Printf(
-		"INFO: %s success=%t, alert=%t",
+	log.WithFields(log.Fields{
+		"monitor": monitor.Name,
+		"success": isSuccess,
+		"alert":   alertNotice != nil,
+	}).Infof(
+		"%s checked",
 		monitor.Name,
-		isSuccess,
-		alertNotice != nil,
 	)
 
 	return isSuccess, alertNotice
@@ -109,15 +108,13 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
 	if monitor.failureCount < monitor.getAlertAfter() {
-		if LogDebug {
-			log.Printf(
-				"DEBUG: %s failed but did not hit minimum failures. "+
-					"Count: %v alert after: %v",
-				monitor.Name,
-				monitor.failureCount,
-				monitor.getAlertAfter(),
-			)
-		}
+		log.Debugf(
+			"%s failed but did not hit minimum failures. "+
+				"Count: %v alert after: %v",
+			monitor.Name,
+			monitor.failureCount,
+			monitor.getAlertAfter(),
+		)
 		return
 	}
 
@@ -155,18 +152,16 @@ func (monitor Monitor) getAlertAfter() int16 {
 	// Zero is one!
 	if monitor.AlertAfter == 0 {
 		return 1
-	} else {
-		return monitor.AlertAfter
 	}
+	return monitor.AlertAfter
 }
 
 // GetAlertNames gives a list of alert names for a given monitor status
 func (monitor Monitor) GetAlertNames(up bool) []string {
 	if up {
 		return monitor.AlertUp
-	} else {
-		return monitor.AlertDown
 	}
+	return monitor.AlertDown
 }
 
 func (monitor Monitor) createAlertNotice(isUp bool) *AlertNotice {
