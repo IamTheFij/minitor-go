@@ -16,8 +16,26 @@ ARG VERSION=dev
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH}
 RUN go build -ldflags "-X main.version=${VERSION}" -a -installsuffix nocgo -o minitor .
 
-FROM ${REPO}/busybox:latest
-WORKDIR /root/
+FROM ${REPO}/alpine:latest
+RUN mkdir /app
+WORKDIR /app/
+
+# Copy minitor in
 COPY --from=builder /app/minitor .
 
+# Add common checking tools
+RUN apk --no-cache add bash==4.4.19-r1 curl==7.64.0-r3 jq==1.6-r0
+
+# Add minitor user for running as non-root
+RUN addgroup -S minitor && adduser -S minitor -G minitor
+
+# Copy scripts
+COPY ./scripts /app/scripts
+RUN chmod -R 755 /app/scripts
+
+# Drop to non-root user
+USER minitor
+
 ENTRYPOINT [ "./minitor" ]
+
+# vim: set filetype=dockerfile:
