@@ -1,4 +1,5 @@
-FROM ${REPO}/alpine:latest
+ARG REPO=library
+FROM ${REPO}/alpine:3.10
 RUN mkdir /app
 WORKDIR /app/
 
@@ -7,7 +8,7 @@ ARG ARCH=amd64
 COPY ./minitor-go ./minitor
 
 # Add common checking tools
-RUN apk --no-cache add bash==4.4.19-r1 curl==7.64.0-r3 jq==1.6-r0
+RUN apk --no-cache add bash=~5.0 curl=~7.66 jq=~1.6
 
 # Add minitor user for running as non-root
 RUN addgroup -S minitor && adduser -S minitor -G minitor
