@@ -15,6 +15,7 @@ RUN addgroup -S minitor && adduser -S minitor -G minitor
 
 # Copy scripts
 COPY ./scripts /app/scripts
+RUN chown -R minitor:minitor /app
 RUN chmod -R 755 /app/scripts
 
 # Drop to non-root user
