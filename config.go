@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
-	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -78,9 +77,7 @@ func LoadConfig(filePath string) (config Config, err error) {
 		return
 	}
 
-	// TODO: Decide if this is better expanded here, or only when executing
-	envExpanded := os.ExpandEnv(string(data))
-	err = yaml.Unmarshal([]byte(envExpanded), &config)
+	err = yaml.Unmarshal(data, &config)
 	if err != nil {
 		return
 	}

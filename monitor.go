@@ -155,18 +155,16 @@ func (monitor Monitor) getAlertAfter() int16 {
 	// Zero is one!
 	if monitor.AlertAfter == 0 {
 		return 1
-	} else {
-		return monitor.AlertAfter
 	}
+	return monitor.AlertAfter
 }
 
 // GetAlertNames gives a list of alert names for a given monitor status
 func (monitor Monitor) GetAlertNames(up bool) []string {
 	if up {
 		return monitor.AlertUp
-	} else {
-		return monitor.AlertDown
 	}
+	return monitor.AlertDown
 }
 
 func (monitor Monitor) createAlertNotice(isUp bool) *AlertNotice {

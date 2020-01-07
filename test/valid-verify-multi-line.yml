@@ -1,0 +1,18 @@
+---
+check_interval: 1
+
+monitors:
+  - name: Shell
+    command_shell: >
+      echo 'Some string with stuff';
+      echo '<angle brackets>';
+      exit 1
+    alert_down: ['log_shell']
+    alert_after: 1
+    alert_every: 0
+
+alerts:
+  log_shell:
+    command_shell: |
+      echo 'Some string with stuff'
+      echo '<angle brackets>'
