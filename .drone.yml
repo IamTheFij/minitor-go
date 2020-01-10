@@ -99,3 +99,16 @@ steps:
         from_secret: docker_username
       password:
         from_secret: docker_password
+
+  - name: notify
+    image: drillster/drone-email
+    settings:
+      host:
+        from_secret: SMTP_HOST
+      username:
+        from_secret: SMTP_USER
+      password:
+        from_secret: SMTP_PASS
+      from: drone@iamthefij.com
+    when:
+      status: [changed, failure]
