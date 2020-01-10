@@ -16,4 +16,6 @@
 config.yml
 
 # Output binary
-minitor-go
+minitor
+minitor-linux-*
+minitor-darwin-amd64

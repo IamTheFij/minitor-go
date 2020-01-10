@@ -45,14 +45,56 @@ trigger:
     - refs/tags/v*
 
 steps:
+  - name: build all binaries
+    image: golang:1.12
+    commands:
+      - make all
 
-  # Might consider moving this step into the previous pipeline
-  - name: push image
+  - name: push image - arm
     image: plugins/docker
     settings:
       repo: iamthefij/minitor-go
-      dockerfile: Dockerfile.multi-stage
       auto_tag: true
+      auto_tag_suffix: linux-arm
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      build_args:
+        - ARCH=arm
+        - REPO=arm32v7
+
+  - name: push image - arm64
+    image: plugins/docker
+    settings:
+      repo: iamthefij/minitor-go
+      auto_tag: true
+      auto_tag_suffix: linux-arm64
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      build_args:
+        - ARCH=arm64
+        - REPO=arm64v8
+
+  - name: push image - amd64
+    image: plugins/docker
+    settings:
+      repo: iamthefij/minitor-go
+      auto_tag: true
+      auto_tag_suffix: linux-amd64
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+
+  - name: publish manifest
+    image: plugins/manifest
+    settings:
+      spec: manifest.tmpl
+      auto_tag: true
+      ignore_missing: true
       username:
         from_secret: docker_username
       password:
