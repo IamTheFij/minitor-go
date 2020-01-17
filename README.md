@@ -1,6 +1,6 @@
 # minitor-go
 
-A reimplementation of [Minitor](https://git.iamthefij/iamthefij/minitor) in Go
+A reimplementation of [Minitor](https://git.iamthefij.com/iamthefij/minitor) in Go
 
 Minitor is already a minimal monitoring tool. Python 3 was a quick way to get something live, but Python itself comes with a large footprint. Thus Go feels like a better fit for the project, longer term.
 
@@ -86,7 +86,7 @@ Pairity:
   - [x] Allow templating of alert commands
   - [x] Implement Prometheus client to export metrics
   - [x] Test coverage
-  - [ ] Integration testing (manual or otherwise)
+  - [x] Integration testing (manual or otherwise)
 
 Improvement (potentially breaking):
 
