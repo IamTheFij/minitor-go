@@ -1,9 +1,12 @@
 ARG REPO=library
 FROM multiarch/qemu-user-static:4.2.0-2 as qemu-user-static
+# Make sure a dummy x86_64 file exists so that the copy command doesn't error
+RUN touch /usr/bin/qemu-x86_64-fake
+
 FROM ${REPO}/alpine:3.10
 
 # Copying all qemu files because amd64 doesn't exist and cannot condional copy
-COPY --from=qemu-user-static /usr/bin/qemu-* /usr/bin/
+COPY --from=qemu-user-static /usr/bin/qemu-${ARCH}-* /usr/bin/
 
 RUN mkdir /app
 WORKDIR /app/
