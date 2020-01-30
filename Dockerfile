@@ -6,7 +6,7 @@ RUN touch /usr/bin/qemu-x86_64-fake
 FROM ${REPO}/alpine:3.10
 
 # Copying all qemu files because amd64 doesn't exist and cannot condional copy
-COPY --from=qemu-user-static /usr/bin/qemu-${ARCH}-* /usr/bin/
+COPY --from=qemu-user-static /usr/bin/qemu-* /usr/bin/
 
 RUN mkdir /app
 WORKDIR /app/
