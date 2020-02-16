@@ -18,7 +18,7 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					&Monitor{
 						Name:    "Success",
-						Command: []string{"true"},
+						Command: CommandOrShell{Command: []string{"true"}},
 					},
 				},
 			},
@@ -30,12 +30,12 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					&Monitor{
 						Name:       "Failure",
-						Command:    []string{"false"},
+						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertAfter: 1,
 					},
 					&Monitor{
 						Name:       "Failure",
-						Command:    []string{"false"},
+						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertDown:  []string{"unknown"},
 						AlertAfter: 1,
 					},
@@ -49,12 +49,12 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					&Monitor{
 						Name:       "Success",
-						Command:    []string{"ls"},
+						Command:    CommandOrShell{Command: []string{"ls"}},
 						alertCount: 1,
 					},
 					&Monitor{
 						Name:       "Success",
-						Command:    []string{"true"},
+						Command:    CommandOrShell{Command: []string{"true"}},
 						AlertUp:    []string{"unknown"},
 						alertCount: 1,
 					},
@@ -68,14 +68,14 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					&Monitor{
 						Name:       "Failure",
-						Command:    []string{"false"},
+						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertDown:  []string{"good"},
 						AlertAfter: 1,
 					},
 				},
 				Alerts: map[string]*Alert{
 					"good": &Alert{
-						Command: []string{"true"},
+						Command: CommandOrShell{Command: []string{"true"}},
 					},
 				},
 			},
@@ -87,7 +87,7 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					&Monitor{
 						Name:       "Failure",
-						Command:    []string{"false"},
+						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertDown:  []string{"bad"},
 						AlertAfter: 1,
 					},
@@ -95,7 +95,7 @@ func TestCheckMonitors(t *testing.T) {
 				Alerts: map[string]*Alert{
 					"bad": &Alert{
 						Name:    "bad",
-						Command: []string{"false"},
+						Command: CommandOrShell{Command: []string{"false"}},
 					},
 				},
 			},

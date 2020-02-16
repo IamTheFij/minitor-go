@@ -15,6 +15,37 @@ type Config struct {
 	Alerts        map[string]*Alert
 }
 
+// CommandOrShell type wraps a string or list of strings
+// for executing a command directly or in a shell
+type CommandOrShell struct {
+	ShellCommand string
+	Command      []string
+}
+
+// Empty checks if the Command has a value
+func (cos CommandOrShell) Empty() bool {
+	return (cos.ShellCommand == "" && cos.Command == nil)
+}
+
+// UnmarshalYAML allows unmarshalling either a string or slice of strings
+// and parsing them as either a command or a shell command.
+func (cos *CommandOrShell) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var cmd []string
+	err := unmarshal(&cmd)
+	// Error indicates this is shell command
+	if err != nil {
+		var shellCmd string
+		err := unmarshal(&shellCmd)
+		if err != nil {
+			return err
+		}
+		cos.ShellCommand = shellCmd
+	} else {
+		cos.Command = cmd
+	}
+	return nil
+}
+
 // IsValid checks config validity and returns true if valid
 func (config Config) IsValid() (isValid bool) {
 	isValid = true

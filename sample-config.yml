@@ -25,7 +25,7 @@ alerts:
   email_up:
     command: [sendmail, "me@minitor.mon", "Recovered: {monitor_name}", "We're back!"]
   mailgun_down:
-    command_shell: >
+    command: >
       curl -s -X POST
       -F subject="Alert! {{.MonitorName}} failed"
       -F from="Minitor <minitor@minitor.mon>"
@@ -34,7 +34,7 @@ alerts:
       https://api.mailgun.net/v3/minitor.mon/messages
       -u "api:${MAILGUN_API_KEY}"
   sms_down:
-    command_shell: >
+    command: >
       curl -s -X POST -F "Body=Failure! {{.MonitorName}} has failed"
       -F "From=${AVAILABLE_NUMBER}" -F "To=${MY_PHONE}"
       "https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Messages"

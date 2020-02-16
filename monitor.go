@@ -11,8 +11,7 @@ import (
 type Monitor struct {
 	// Config values
 	Name          string
-	Command       []string
-	CommandShell  string   `yaml:"command_shell"`
+	Command       CommandOrShell
 	AlertDown     []string `yaml:"alert_down"`
 	AlertUp       []string `yaml:"alert_up"`
 	CheckInterval float64  `yaml:"check_interval"`
@@ -29,10 +28,7 @@ type Monitor struct {
 // IsValid returns a boolean indicating if the Monitor has been correctly
 // configured
 func (monitor Monitor) IsValid() bool {
-	atLeastOneCommand := (monitor.CommandShell != "" || monitor.Command != nil)
-	atMostOneCommand := (monitor.CommandShell == "" || monitor.Command == nil)
-	return (atLeastOneCommand &&
-		atMostOneCommand &&
+	return (!monitor.Command.Empty() &&
 		monitor.getAlertAfter() > 0 &&
 		monitor.AlertDown != nil)
 }
@@ -52,10 +48,10 @@ func (monitor Monitor) ShouldCheck() bool {
 // and a possible AlertNotice
 func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	var cmd *exec.Cmd
-	if monitor.Command != nil {
-		cmd = exec.Command(monitor.Command[0], monitor.Command[1:]...)
+	if monitor.Command.Command != nil {
+		cmd = exec.Command(monitor.Command.Command[0], monitor.Command.Command[1:]...)
 	} else {
-		cmd = ShellCommand(monitor.CommandShell)
+		cmd = ShellCommand(monitor.Command.ShellCommand)
 	}
 
 	output, err := cmd.CombinedOutput()

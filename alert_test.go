@@ -11,14 +11,9 @@ func TestAlertIsValid(t *testing.T) {
 		expected bool
 		name     string
 	}{
-		{Alert{Command: []string{"echo", "test"}}, true, "Command only"},
-		{Alert{CommandShell: "echo test"}, true, "CommandShell only"},
+		{Alert{Command: CommandOrShell{Command: []string{"echo", "test"}}}, true, "Command only"},
+		{Alert{Command: CommandOrShell{ShellCommand: "echo test"}}, true, "CommandShell only"},
 		{Alert{}, false, "No commands"},
-		{
-			Alert{Command: []string{"echo", "test"}, CommandShell: "echo test"},
-			false,
-			"Both commands",
-		},
 	}
 
 	for _, c := range cases {
@@ -41,28 +36,28 @@ func TestAlertSend(t *testing.T) {
 		name           string
 	}{
 		{
-			Alert{Command: []string{"echo", "{{.MonitorName}}"}},
+			Alert{Command: CommandOrShell{Command: []string{"echo", "{{.MonitorName}}"}}},
 			AlertNotice{MonitorName: "test"},
 			"test\n",
 			false,
 			"Command with template",
 		},
 		{
-			Alert{CommandShell: "echo {{.MonitorName}}"},
+			Alert{Command: CommandOrShell{ShellCommand: "echo {{.MonitorName}}"}},
 			AlertNotice{MonitorName: "test"},
 			"test\n",
 			false,
 			"Command shell with template",
 		},
 		{
-			Alert{Command: []string{"echo", "{{.Bad}}"}},
+			Alert{Command: CommandOrShell{Command: []string{"echo", "{{.Bad}}"}}},
 			AlertNotice{MonitorName: "test"},
 			"",
 			true,
 			"Command with bad template",
 		},
 		{
-			Alert{CommandShell: "echo {{.Bad}}"},
+			Alert{Command: CommandOrShell{ShellCommand: "echo {{.Bad}}"}},
 			AlertNotice{MonitorName: "test"},
 			"",
 			true,
@@ -103,8 +98,8 @@ func TestAlertBuildTemplate(t *testing.T) {
 		expectErr bool
 		name      string
 	}{
-		{Alert{Command: []string{"echo", "test"}}, false, "Command only"},
-		{Alert{CommandShell: "echo test"}, false, "CommandShell only"},
+		{Alert{Command: CommandOrShell{Command: []string{"echo", "test"}}}, false, "Command only"},
+		{Alert{Command: CommandOrShell{ShellCommand: "echo test"}}, false, "CommandShell only"},
 		{Alert{}, true, "No commands"},
 	}
 
