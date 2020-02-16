@@ -12,8 +12,7 @@ import (
 // Alert is a config driven mechanism for sending a notice
 type Alert struct {
 	Name                 string
-	Command              []string
-	CommandShell         string `yaml:"command_shell"`
+	Command              CommandOrShell
 	commandTemplate      []*template.Template
 	commandShellTemplate *template.Template
 }
@@ -31,9 +30,7 @@ type AlertNotice struct {
 // IsValid returns a boolean indicating if the Alert has been correctly
 // configured
 func (alert Alert) IsValid() bool {
-	atLeastOneCommand := (alert.CommandShell != "" || alert.Command != nil)
-	atMostOneCommand := (alert.CommandShell == "" || alert.Command == nil)
-	return atLeastOneCommand && atMostOneCommand
+	return !alert.Command.Empty()
 }
 
 // BuildTemplates compiles command templates for the Alert
@@ -41,16 +38,16 @@ func (alert *Alert) BuildTemplates() error {
 	if LogDebug {
 		log.Printf("DEBUG: Building template for alert %s", alert.Name)
 	}
-	if alert.commandTemplate == nil && alert.Command != nil {
+	if alert.commandTemplate == nil && alert.Command.Command != nil {
 		alert.commandTemplate = []*template.Template{}
-		for i, cmdPart := range alert.Command {
+		for i, cmdPart := range alert.Command.Command {
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+string(i)).Parse(cmdPart),
 			))
 		}
-	} else if alert.commandShellTemplate == nil && alert.CommandShell != "" {
+	} else if alert.commandShellTemplate == nil && alert.Command.ShellCommand != "" {
 		alert.commandShellTemplate = template.Must(
-			template.New(alert.Name).Parse(alert.CommandShell),
+			template.New(alert.Name).Parse(alert.Command.ShellCommand),
 		)
 	} else {
 		return fmt.Errorf("No template provided for alert %s", alert.Name)

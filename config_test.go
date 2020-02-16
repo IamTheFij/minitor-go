@@ -42,7 +42,7 @@ func TestMultiLineConfig(t *testing.T) {
 	log.Println("-----")
 	log.Println("TestMultiLineConfig(parse > string)")
 	expected := "echo 'Some string with stuff'; echo \"<angle brackets>\"; exit 1\n"
-	actual := config.Monitors[0].CommandShell
+	actual := config.Monitors[0].Command.ShellCommand
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(>) failed")
 		t.Logf("string expected=`%v`", expected)
@@ -70,7 +70,7 @@ func TestMultiLineConfig(t *testing.T) {
 	log.Println("-----")
 	log.Println("TestMultiLineConfig(parse | string)")
 	expected = "echo 'Some string with stuff'\necho '<angle brackets>'\n"
-	actual = config.Alerts["log_shell"].CommandShell
+	actual = config.Alerts["log_shell"].Command.ShellCommand
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(|) failed")
 		t.Logf("string expected=`%v`", expected)

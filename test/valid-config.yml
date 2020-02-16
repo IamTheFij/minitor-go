@@ -7,7 +7,7 @@ monitors:
     alert_down: ['log_command', 'log_shell']
     alert_every: 0
   - name: Shell
-    command_shell: >
+    command: >
       echo 'Some string with stuff';
       echo 'another line';
       echo $PATH;
@@ -20,4 +20,4 @@ alerts:
   log_command:
     command: ['echo', 'regular', '"command!!!"', "{{.MonitorName}}"]
   log_shell:
-    command_shell: echo "Failure on {{.MonitorName}} User is $USER"
+    command: echo "Failure on {{.MonitorName}} User is $USER"

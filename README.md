@@ -8,29 +8,8 @@ Initial target is meant to be roughly compatible requiring only minor changes to
 
 ## Differences from Python version
 
-There are a few key differences between the Python version and the v0.x Go version.
 
-First, configuration keys cannot have multiple types in Go, so a different key must be used when specifying a Shell command as a string rather than a list of args. Instead of `command`, you must use `command_shell`. Eg:
-
-minitor-py:
-```yaml
-monitors:
-  - name: Exec command
-    command: ['echo', 'test']
-  - name: Shell command
-    command: echo 'test'
-```
-
-minitor-go:
-```yaml
-monitors:
-  - name: Exec command
-    command: ['echo', 'test']
-  - name: Shell command
-    command_shell: echo 'test'
-```
-
-Second, templating for Alert messages has been updated. In the Python version, `str.format(...)` was used with certain keys passed in that could be used to format messages. In the Go version, we use a struct, `AlertNotice` defined in `alert.go` and the built in Go templating format. Eg.
+Templating for Alert messages has been updated. In the Python version, `str.format(...)` was used with certain keys passed in that could be used to format messages. In the Go version, we use a struct, `AlertNotice` defined in `alert.go` and the built in Go templating format. Eg.
 
 minitor-py:
 ```yaml
@@ -38,7 +17,7 @@ alerts:
   log_command:
     command: ['echo', '{monitor_name}']
   log_shell:
-    command_shell: 'echo {monitor_name}'
+    command: 'echo {monitor_name}'
 ```
 
 minitor-go:
@@ -47,7 +26,7 @@ alerts:
   log_command:
     command: ['echo', '{{.MonitorName}}']
   log_shell:
-    command_shell: 'echo {{.MonitorName}}'
+    command: 'echo {{.MonitorName}}'
 ```
 
 Finally, newlines in a shell command don't terminate a particular command. Semicolons must be used and continuations should not.
@@ -56,7 +35,7 @@ minitor-py:
 ```yaml
 alerts:
   log_shell:
-    command_shell: >
+    command: >
       echo "line 1"
       echo "line 2"
       echo "continued" \
@@ -67,7 +46,7 @@ minitor-go:
 ```yaml
 alerts:
   log_shell:
-    command_shell: >
+    command: >
       echo "line 1";
       echo "line 2";
       echo "continued"
@@ -87,6 +66,7 @@ Pairity:
   - [x] Implement Prometheus client to export metrics
   - [x] Test coverage
   - [x] Integration testing (manual or otherwise)
+  - [x] Allow commands and shell commands in the same config key
 
 Improvement (potentially breaking):
 

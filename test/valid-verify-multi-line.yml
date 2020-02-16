@@ -3,7 +3,7 @@ check_interval: 1
 
 monitors:
   - name: Shell
-    command_shell: >
+    command: >
       echo 'Some string with stuff';
       echo "<angle brackets>";
       exit 1
@@ -13,6 +13,6 @@ monitors:
 
 alerts:
   log_shell:
-    command_shell: |
+    command: |
       echo 'Some string with stuff'
       echo '<angle brackets>'
