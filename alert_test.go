@@ -63,6 +63,13 @@ func TestAlertSend(t *testing.T) {
 			true,
 			"Command shell with bad template",
 		},
+		{
+			Alert{Command: CommandOrShell{ShellCommand: "echo {alert_message}"}},
+			AlertNotice{MonitorName: "test", FailureCount: 1},
+			"test check has failed 1 times\n",
+			false,
+			"Command shell with legacy template",
+		},
 	}
 
 	for _, c := range cases {
