@@ -60,7 +60,7 @@ func (alert *Alert) BuildTemplates() error {
 }
 
 // Send will send an alert notice by executing the command template
-func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
+func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 	log.Printf("INFO: Sending alert %s for %s", alert.Name, notice.MonitorName)
 	var cmd *exec.Cmd
 	if alert.commandTemplate != nil {
@@ -95,10 +95,10 @@ func (alert Alert) Send(notice AlertNotice) (output_str string, err error) {
 
 	var output []byte
 	output, err = cmd.CombinedOutput()
-	output_str = string(output)
+	outputStr = string(output)
 	if LogDebug {
-		log.Printf("DEBUG: Alert output for: %s\n---\n%s\n---", alert.Name, output_str)
+		log.Printf("DEBUG: Alert output for: %s\n---\n%s\n---", alert.Name, outputStr)
 	}
 
-	return output_str, err
+	return outputStr, err
 }
