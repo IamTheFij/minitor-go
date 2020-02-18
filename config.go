@@ -117,6 +117,11 @@ func LoadConfig(filePath string) (config Config, err error) {
 		log.Printf("DEBUG: Config values:\n%v\n", config)
 	}
 
+	if _, ok := config.Alerts["log"]; !ok {
+		log.Printf("Adding log alert")
+		config.Alerts["log"] = NewLogAlert()
+	}
+
 	if !config.IsValid() {
 		err = errors.New("Invalid configuration")
 		return
