@@ -12,6 +12,7 @@ func TestLoadConfig(t *testing.T) {
 		name       string
 	}{
 		{"./test/valid-config.yml", false, "Valid config file"},
+		{"./test/valid-default-log-alert.yml", false, "Valid config file with default log alert"},
 		{"./test/does-not-exist", true, "Invalid config path"},
 		{"./test/invalid-config-type.yml", true, "Invalid config type for key"},
 		{"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts"},
