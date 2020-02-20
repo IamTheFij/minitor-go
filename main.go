@@ -18,6 +18,9 @@ var (
 	// Metrics contains all active metrics
 	Metrics = NewMetrics()
 
+	// PyCompat enables support for legacy Python templates
+	PyCompat = false
+
 	// version of minitor being run
 	version = "dev"
 )
@@ -83,6 +86,7 @@ func main() {
 	// Get debug flag
 	flag.BoolVar(&LogDebug, "debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
+	flag.BoolVar(&PyCompat, "py-compat", false, "Enables support for legacy Python Minitor config. Will eventually be removed. (default: false)")
 	var showVersion = flag.Bool("version", false, "Display the version of minitor and exit")
 	var configPath = flag.String("config", "config.yml", "Alternate configuration path (default: config.yml)")
 	flag.Parse()

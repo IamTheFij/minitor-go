@@ -10,22 +10,29 @@ func TestLoadConfig(t *testing.T) {
 		configPath string
 		expectErr  bool
 		name       string
+		pyCompat   bool
 	}{
-		{"./test/valid-config.yml", false, "Valid config file"},
-		{"./test/does-not-exist", true, "Invalid config path"},
-		{"./test/invalid-config-type.yml", true, "Invalid config type for key"},
-		{"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts"},
-		{"./test/invalid-config-unknown-alert.yml", true, "Invalid config unknown alert"},
+		{"./test/valid-config.yml", false, "Valid config file", false},
+		{"./test/valid-default-log-alert.yml", false, "Valid config file with default log alert PyCompat", true},
+		{"./test/valid-default-log-alert.yml", true, "Invalid config file no log alert", false},
+		{"./test/does-not-exist", true, "Invalid config path", false},
+		{"./test/invalid-config-type.yml", true, "Invalid config type for key", false},
+		{"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts", false},
+		{"./test/invalid-config-unknown-alert.yml", true, "Invalid config unknown alert", false},
 	}
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+		// Set PyCompat based on compatibility mode
+		PyCompat = c.pyCompat
 		_, err := LoadConfig(c.configPath)
 		hasErr := (err != nil)
 		if hasErr != c.expectErr {
 			t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectErr, err)
 			log.Printf("Case failed: %s", c.name)
 		}
+		// Set PyCompat to default value
+		PyCompat = false
 		log.Println("-----")
 	}
 }

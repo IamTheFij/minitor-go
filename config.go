@@ -50,6 +50,19 @@ func (cos *CommandOrShell) UnmarshalYAML(unmarshal func(interface{}) error) erro
 func (config Config) IsValid() (isValid bool) {
 	isValid = true
 
+	// Validate alerts
+	if config.Alerts == nil || len(config.Alerts) == 0 {
+		// This should never happen because there is a default alert named 'log' for now
+		log.Printf("ERROR: Invalid alert configuration: Must provide at least one alert")
+		isValid = false
+	}
+	for _, alert := range config.Alerts {
+		if !alert.IsValid() {
+			log.Printf("ERROR: Invalid alert configuration: %s", alert.Name)
+			isValid = false
+		}
+	}
+
 	// Validate monitors
 	if config.Monitors == nil || len(config.Monitors) == 0 {
 		log.Printf("ERROR: Invalid monitor configuration: Must provide at least one monitor")
@@ -71,18 +84,6 @@ func (config Config) IsValid() (isValid bool) {
 					isValid = false
 				}
 			}
-		}
-	}
-
-	// Validate alerts
-	if config.Alerts == nil || len(config.Alerts) == 0 {
-		log.Printf("ERROR: Invalid alert configuration: Must provide at least one alert")
-		isValid = false
-	}
-	for _, alert := range config.Alerts {
-		if !alert.IsValid() {
-			log.Printf("ERROR: Invalid alert configuration: %s", alert.Name)
-			isValid = false
 		}
 	}
 
@@ -115,6 +116,17 @@ func LoadConfig(filePath string) (config Config, err error) {
 
 	if LogDebug {
 		log.Printf("DEBUG: Config values:\n%v\n", config)
+	}
+
+	// Add log alert if not present
+	if PyCompat {
+		// Intialize alerts list if not present
+		if config.Alerts == nil {
+			config.Alerts = map[string]*Alert{}
+		}
+		if _, ok := config.Alerts["log"]; !ok {
+			config.Alerts["log"] = NewLogAlert()
+		}
 	}
 
 	if !config.IsValid() {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os/exec"
+	"strings"
 	"text/template"
 	"time"
 )
@@ -35,19 +36,35 @@ func (alert Alert) IsValid() bool {
 
 // BuildTemplates compiles command templates for the Alert
 func (alert *Alert) BuildTemplates() error {
+	// TODO: Remove legacy template support later after 1.0
+	legacy := strings.NewReplacer(
+		"{alert_count}", "{{.AlertCount}}",
+		"{alert_message}", "{{.MonitorName}} check has failed {{.FailureCount}} times",
+		"{failure_count}", "{{.FailureCount}}",
+		"{last_output}", "{{.LastCheckOutput}}",
+		"{last_success}", "{{.LastSuccess}}",
+		"{monitor_name}", "{{.MonitorName}}",
+	)
 	if LogDebug {
 		log.Printf("DEBUG: Building template for alert %s", alert.Name)
 	}
 	if alert.commandTemplate == nil && alert.Command.Command != nil {
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command.Command {
+			if PyCompat {
+				cmdPart = legacy.Replace(cmdPart)
+			}
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+string(i)).Parse(cmdPart),
 			))
 		}
 	} else if alert.commandShellTemplate == nil && alert.Command.ShellCommand != "" {
+		shellCmd := alert.Command.ShellCommand
+		if PyCompat {
+			shellCmd = legacy.Replace(shellCmd)
+		}
 		alert.commandShellTemplate = template.Must(
-			template.New(alert.Name).Parse(alert.Command.ShellCommand),
+			template.New(alert.Name).Parse(shellCmd),
 		)
 	} else {
 		return fmt.Errorf("No template provided for alert %s", alert.Name)
@@ -98,4 +115,17 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 	}
 
 	return outputStr, err
+}
+
+// NewLogAlert creates an alert that does basic logging using echo
+func NewLogAlert() *Alert {
+	return &Alert{
+		Name: "log",
+		Command: CommandOrShell{
+			Command: []string{
+				"echo",
+				"{{.MonitorName}} check has failed {{.FailureCount}} times",
+			},
+		},
+	}
 }
