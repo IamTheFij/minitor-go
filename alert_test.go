@@ -34,6 +34,7 @@ func TestAlertSend(t *testing.T) {
 		expectedOutput string
 		expectErr      bool
 		name           string
+		pyCompat       bool
 	}{
 		{
 			Alert{Command: CommandOrShell{Command: []string{"echo", "{{.MonitorName}}"}}},
@@ -41,6 +42,7 @@ func TestAlertSend(t *testing.T) {
 			"test\n",
 			false,
 			"Command with template",
+			false,
 		},
 		{
 			Alert{Command: CommandOrShell{ShellCommand: "echo {{.MonitorName}}"}},
@@ -48,6 +50,7 @@ func TestAlertSend(t *testing.T) {
 			"test\n",
 			false,
 			"Command shell with template",
+			false,
 		},
 		{
 			Alert{Command: CommandOrShell{Command: []string{"echo", "{{.Bad}}"}}},
@@ -55,6 +58,7 @@ func TestAlertSend(t *testing.T) {
 			"",
 			true,
 			"Command with bad template",
+			false,
 		},
 		{
 			Alert{Command: CommandOrShell{ShellCommand: "echo {{.Bad}}"}},
@@ -62,6 +66,7 @@ func TestAlertSend(t *testing.T) {
 			"",
 			true,
 			"Command shell with bad template",
+			false,
 		},
 		{
 			Alert{Command: CommandOrShell{ShellCommand: "echo {alert_message}"}},
@@ -69,11 +74,14 @@ func TestAlertSend(t *testing.T) {
 			"test check has failed 1 times\n",
 			false,
 			"Command shell with legacy template",
+			true,
 		},
 	}
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+		// Set PyCompat to value of compat flag
+		PyCompat = c.pyCompat
 		c.alert.BuildTemplates()
 		output, err := c.alert.Send(c.notice)
 		hasErr := (err != nil)
@@ -85,6 +93,8 @@ func TestAlertSend(t *testing.T) {
 			t.Errorf("Send(%v err), expected=%v actual=%v", c.name, "Err", err)
 			log.Printf("Case failed: %s", c.name)
 		}
+		// Set PyCompat back to default value
+		PyCompat = false
 		log.Println("-----")
 	}
 }
