@@ -118,14 +118,15 @@ func LoadConfig(filePath string) (config Config, err error) {
 		log.Printf("DEBUG: Config values:\n%v\n", config)
 	}
 
-	// Intialize alerts list if not present
-	if config.Alerts == nil {
-		config.Alerts = map[string]*Alert{}
-	}
-
 	// Add log alert if not present
-	if _, ok := config.Alerts["log"]; !ok {
-		config.Alerts["log"] = NewLogAlert()
+	if PyCompat {
+		// Intialize alerts list if not present
+		if config.Alerts == nil {
+			config.Alerts = map[string]*Alert{}
+		}
+		if _, ok := config.Alerts["log"]; !ok {
+			config.Alerts["log"] = NewLogAlert()
+		}
 	}
 
 	if !config.IsValid() {

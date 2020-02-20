@@ -51,16 +51,20 @@ func (alert *Alert) BuildTemplates() error {
 	if alert.commandTemplate == nil && alert.Command.Command != nil {
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command.Command {
-			cmdPart = legacy.Replace(cmdPart)
+			if PyCompat {
+				cmdPart = legacy.Replace(cmdPart)
+			}
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+string(i)).Parse(cmdPart),
 			))
 		}
 	} else if alert.commandShellTemplate == nil && alert.Command.ShellCommand != "" {
+		shellCmd := alert.Command.ShellCommand
+		if PyCompat {
+			shellCmd = legacy.Replace(shellCmd)
+		}
 		alert.commandShellTemplate = template.Must(
-			template.New(alert.Name).Parse(
-				legacy.Replace(alert.Command.ShellCommand),
-			),
+			template.New(alert.Name).Parse(shellCmd),
 		)
 	} else {
 		return fmt.Errorf("No template provided for alert %s", alert.Name)
