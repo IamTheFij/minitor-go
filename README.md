@@ -93,6 +93,7 @@ Also, when alerts are executed, they will be passed through Go's format function
 |`{{.LastCheckOutput}}`|The last returned value from the check command to either stderr or stdout|
 |`{{.LastSuccess}}`|The ISO datetime of the last successful check|
 |`{{.MonitorName}}`|The name of the monitor that failed and triggered the alert|
+|`{{.IsUp}}`|Indicates if the monitor that is alerting is up or not. Can be used in a conditional message template|
 
 ### Metrics
 

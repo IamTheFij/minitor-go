@@ -124,7 +124,7 @@ func NewLogAlert() *Alert {
 		Command: CommandOrShell{
 			Command: []string{
 				"echo",
-				"{{.MonitorName}} check has failed {{.FailureCount}} times",
+				"{{.MonitorName}} {{if .IsUp}}has recovered{{else}}check has failed {{.FailureCount}} times{{end}}",
 			},
 		},
 	}

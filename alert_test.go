@@ -76,6 +76,24 @@ func TestAlertSend(t *testing.T) {
 			"Command shell with legacy template",
 			true,
 		},
+		// Test default log alert down
+		{
+			*NewLogAlert(),
+			AlertNotice{MonitorName: "Test", FailureCount: 1, IsUp: false},
+			"Test check has failed 1 times\n",
+			false,
+			"Default log alert down",
+			false,
+		},
+		// Test default log alert up
+		{
+			*NewLogAlert(),
+			AlertNotice{MonitorName: "Test", IsUp: true},
+			"Test has recovered\n",
+			false,
+			"Default log alert up",
+			false,
+		},
 	}
 
 	for _, c := range cases {
