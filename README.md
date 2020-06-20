@@ -68,6 +68,7 @@ Each monitor allows the following configuration:
 |---|---|
 |`name`|Name of the monitor running. This will show up in messages and logs.|
 |`command`|Specifies the command that should be executed, either in exec or shell form. This command's exit value will determine whether the check is successful|
+|`alerts`|A list of Alerts to be triggered when the monitor changes states to either "up" or "down". This is most useful if using a conditional template|
 |`alert_down`|A list of Alerts to be triggered when the monitor is in a "down" state|
 |`alert_up`|A list of Alerts to be triggered when the monitor moves to an "up" state|
 |`check_interval`|The interval at which this monitor should be checked. This must be greater than the global `check_interval` value|
@@ -76,15 +77,15 @@ Each monitor allows the following configuration:
 
 ### Alerts
 
-Alerts exist as objects keyed under `alerts`. Their key should be the name of the Alert. This is used in your monitor setup in `alert_down` and `alert_up`.
+Alerts exist as objects keyed under `alerts`. Their key should be the name of the Alert. This is used in your monitor setup in `alerts`, `alert_down` and `alert_up`.
 
-Eachy alert allows the following configuration:
+Each alert allows the following configuration:
 
 |key|value|
 |---|---|
 |`command`|Specifies the command that should be executed, either in exec or shell form. This is the command that will be run when the alert is executed. This can be templated with environment variables or the variables shown in the table below|
 
-Also, when alerts are executed, they will be passed through Go's format function with arguments for some attributes of the Monitor. The following monitor specific variables can be referenced using Go formatting syntax:
+Also, when alerts are executed, they will be passed through Go's templating engine with arguments for some attributes of the Monitor. The following monitor specific variables can be referenced using Go formatting syntax:
 
 |token|value|
 |---|---|

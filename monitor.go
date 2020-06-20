@@ -12,6 +12,7 @@ type Monitor struct {
 	// Config values
 	Name          string
 	Command       CommandOrShell
+	Alerts		  []string
 	AlertDown     []string `yaml:"alert_down"`
 	AlertUp       []string `yaml:"alert_up"`
 	CheckInterval float64  `yaml:"check_interval"`
@@ -30,7 +31,7 @@ type Monitor struct {
 func (monitor Monitor) IsValid() bool {
 	return (!monitor.Command.Empty() &&
 		monitor.getAlertAfter() > 0 &&
-		monitor.AlertDown != nil)
+		(monitor.Alerts != nil || monitor.AlertDown != nil))
 }
 
 // ShouldCheck returns a boolean indicating if the Monitor is ready to be
@@ -158,9 +159,9 @@ func (monitor Monitor) getAlertAfter() int16 {
 // GetAlertNames gives a list of alert names for a given monitor status
 func (monitor Monitor) GetAlertNames(up bool) []string {
 	if up {
-		return monitor.AlertUp
+		return append(monitor.Alerts, monitor.AlertUp...)
 	}
-	return monitor.AlertDown
+	return append(monitor.Alerts, monitor.AlertDown...)
 }
 
 func (monitor Monitor) createAlertNotice(isUp bool) *AlertNotice {

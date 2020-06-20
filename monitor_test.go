@@ -18,6 +18,7 @@ func TestMonitorIsValid(t *testing.T) {
 		{Monitor{Command: CommandOrShell{Command: []string{"echo", "test"}}}, false, "No AlertDown"},
 		{Monitor{AlertDown: []string{"log"}}, false, "No commands"},
 		{Monitor{Command: CommandOrShell{Command: []string{"echo", "test"}}, AlertDown: []string{"log"}, AlertAfter: -1}, false, "Invalid alert threshold, -1"},
+		{Monitor{Command: CommandOrShell{Command: []string{"echo", "test"}}, Alerts: []string{"log"}}, true, "Using non-up/down specific alerts"},
 	}
 
 	for _, c := range cases {
