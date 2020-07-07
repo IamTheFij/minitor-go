@@ -6,6 +6,8 @@ steps:
 
   - name: test
     image: golang:1.12
+    environment:
+      VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
     commands:
       - make build
       - make test
@@ -47,6 +49,8 @@ trigger:
 steps:
   - name: build all binaries
     image: golang:1.12
+    environment:
+      VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
     commands:
       - make all-linux
 

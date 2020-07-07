@@ -1,5 +1,5 @@
 DOCKER_TAG ?= minitor-go-${USER}
-export VERSION := $(shell git describe --tags --dirty)
+VERSION ?= $(shell git describe --tags --dirty)
 GOFILES = *.go
 # Multi-arch targets are generated from this
 TARGET_ALIAS = minitor-linux-amd64 minitor-linux-arm minitor-linux-arm64 minitor-darwin-amd64
