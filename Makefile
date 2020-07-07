@@ -1,11 +1,10 @@
 DOCKER_TAG ?= minitor-go-${USER}
-GIT_TAG_NAME := $(shell git tag -l --contains HEAD)
-GIT_SHA := $(shell git rev-parse HEAD)
-export VERSION := $(if $(GIT_TAG_NAME),$(GIT_TAG_NAME),$(GIT_SHA))
+export VERSION := $(shell git describe --tags --dirty)
 GOFILES = *.go
 # Multi-arch targets are generated from this
 TARGET_ALIAS = minitor-linux-amd64 minitor-linux-arm minitor-linux-arm64 minitor-darwin-amd64
 TARGETS = $(addprefix dist/,$(TARGET_ALIAS))
+#
 # Default make target will run tests
 .DEFAULT_GOAL = test
 
