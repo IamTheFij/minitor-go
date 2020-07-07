@@ -17,5 +17,4 @@ config.yml
 
 # Output binary
 minitor
-minitor-linux-*
-minitor-darwin-amd64
+dist/
