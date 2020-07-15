@@ -85,12 +85,13 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	return isSuccess, alertNotice
 }
 
-func (monitor Monitor) isUp() bool {
+// IsUp returns the status of the current monitor
+func (monitor Monitor) IsUp() bool {
 	return monitor.alertCount == 0
 }
 
 func (monitor *Monitor) success() (notice *AlertNotice) {
-	if !monitor.isUp() {
+	if !monitor.IsUp() {
 		// Alert that we have recovered
 		notice = monitor.createAlertNotice(true)
 	}

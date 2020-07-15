@@ -33,7 +33,7 @@ func checkMonitors(config *Config) error {
 			hasAlert := alertNotice != nil
 
 			// Track status metrics
-			Metrics.SetMonitorStatus(monitor.Name, success)
+			Metrics.SetMonitorStatus(monitor.Name, monitor.IsUp())
 			Metrics.CountCheck(monitor.Name, success, hasAlert)
 
 			// Should probably consider refactoring everything below here

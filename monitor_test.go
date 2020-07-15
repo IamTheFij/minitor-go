@@ -56,7 +56,7 @@ func TestMonitorShouldCheck(t *testing.T) {
 	}
 }
 
-// TestMonitorIsUp tests the Monitor.isUp()
+// TestMonitorIsUp tests the Monitor.IsUp()
 func TestMonitorIsUp(t *testing.T) {
 	cases := []struct {
 		monitor  Monitor
@@ -71,9 +71,9 @@ func TestMonitorIsUp(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
-		actual := c.monitor.isUp()
+		actual := c.monitor.IsUp()
 		if actual != c.expected {
-			t.Errorf("isUp(%v), expected=%t actual=%t", c.name, c.expected, actual)
+			t.Errorf("IsUp(%v), expected=%t actual=%t", c.name, c.expected, actual)
 			log.Printf("Case failed: %s", c.name)
 		}
 		log.Println("-----")
