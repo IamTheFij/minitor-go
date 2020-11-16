@@ -11,6 +11,7 @@ set -e
 # To override, export DOCKER_HOST to a new hostname
 DOCKER_HOST="${DOCKER_HOST:=socket}"
 container_name="$1"
+num_log_lines="$2"
 
 # Curls Docker either using a socket or URL
 function curl_docker {
@@ -35,8 +36,15 @@ function inspect_container {
     curl_docker "containers/$container_id/json"
 }
 
+# Gets some lines from docker log
+function get_logs {
+    container_id="$1"
+    num_lines="$2"
+    curl_docker "containers/$container_id/logs?stdout=1&stderr=1" | tail -n "$num_lines"
+}
+
 if [ -z "$container_name" ]; then
-    echo "Usage: $0 container_name"
+    echo "Usage: $0 container_name [num_log_lines]"
     echo "Will return results of healthcheck for continer with provided name"
     exit 1
 fi
@@ -47,6 +55,10 @@ if [ -z "$container_id" ]; then
     exit 1
 fi
 health=$(inspect_container "$container_id" | jq -r '.State.Health.Status')
+
+if [ -n "$num_log_lines" ]; then
+    get_logs "$container_id" "$num_log_lines"
+fi
 
 case "$health" in
     null)
