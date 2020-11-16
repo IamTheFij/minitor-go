@@ -55,7 +55,7 @@ func (alert *Alert) BuildTemplates() error {
 				cmdPart = legacy.Replace(cmdPart)
 			}
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
-				template.New(alert.Name+string(i)).Parse(cmdPart),
+				template.New(alert.Name+fmt.Sprint(i)).Parse(cmdPart),
 			))
 		}
 	} else if alert.commandShellTemplate == nil && alert.Command.ShellCommand != "" {
