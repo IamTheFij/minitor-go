@@ -46,7 +46,7 @@ test:
 install-hooks:
 	pre-commit install --install-hooks
 
-# Checks files for encryption
+# Runs pre-commit checks on files
 .PHONY: check
 check:
 	pre-commit run --all-files
