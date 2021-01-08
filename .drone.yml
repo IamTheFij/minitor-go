@@ -3,33 +3,15 @@ kind: pipeline
 name: test
 
 steps:
-
   - name: test
     image: golang:1.15
     environment:
       VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
     commands:
-      - make build
       - make test
 
   - name: check
-    image: python:3
-    commands:
-      - pip install pre-commit==1.20.0
-      - make check
-
-  - name: notify
-    image: drillster/drone-email
-    settings:
-      host:
-        from_secret: SMTP_HOST
-      username:
-        from_secret: SMTP_USER
-      password:
-        from_secret: SMTP_PASS
-      from: drone@iamthefij.com
-    when:
-      status: [changed, failure]
+    image: iamthefij/drone-pre-commit:personal
 
 ---
 kind: pipeline
@@ -52,7 +34,31 @@ steps:
     environment:
       VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
     commands:
-      - make all-linux
+      - make all
+
+  - name: compress binaries for release
+    image: ubuntu
+    commands:
+      - find ./dist -type f -executable -execdir tar -czvf {}.tar.gz {} \;
+    when:
+      event: tag
+
+  - name: upload gitea release
+    image: plugins/gitea-release
+    settings:
+      title: ${DRONE_TAG}
+      files: dist/*.tar.gz
+      checksum:
+        - md5
+        - sha1
+        - sha256
+        - sha512
+      base_url:
+        from_secret: gitea_base_url
+      api_key:
+        from_secret: gitea_token
+    when:
+      event: tag
 
   - name: push image - arm
     image: plugins/docker
@@ -104,15 +110,27 @@ steps:
       password:
         from_secret: docker_password
 
+---
+kind: pipeline
+name: notify
+
+depends_on:
+  - test
+  - publish
+
+trigger:
+  status:
+    - failure
+
+steps:
+
   - name: notify
     image: drillster/drone-email
     settings:
       host:
-        from_secret: SMTP_HOST
+        from_secret: SMTP_HOST  # pragma: whitelist secret
       username:
-        from_secret: SMTP_USER
+        from_secret: SMTP_USER  # pragma: whitelist secret
       password:
-        from_secret: SMTP_PASS
+        from_secret: SMTP_PASS  # pragma: whitelist secret
       from: drone@iamthefij.com
-    when:
-      status: [changed, failure]
