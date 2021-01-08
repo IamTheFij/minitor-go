@@ -44,10 +44,8 @@ steps:
       - make dist/minitor-linux-amd64
 
   - name: compress binaries for release
-    image: busybox
+    image: ubuntu
     commands:
-      - pwd
-      - ls
       - ./compress_release.sh
       - find ./dist -type f -perm +111 -execdir tar -czvf {}.tar.gz {} \;
 
