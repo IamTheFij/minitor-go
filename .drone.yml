@@ -31,8 +31,9 @@ trigger:
     - push
     - tag
   refs:
-    - refs/heads/master
-    - refs/tags/v*
+    include:
+      - refs/heads/master
+      - refs/tags/v*
 
 steps:
   - name: build all binaries
