@@ -49,7 +49,7 @@ steps:
     environment:
       VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
     commands:
-      - make all-linux
+      - make all
 
   - name: compress binaries for release
     image: busybox
