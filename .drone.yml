@@ -53,6 +53,7 @@ steps:
 
   - name: compress binaries for release
     image: busybox
+    commands:
       - ./compress_release.sh
 
   - name: upload gitea pre-release
