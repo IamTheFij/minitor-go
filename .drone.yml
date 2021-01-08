@@ -47,26 +47,9 @@ steps:
   - name: compress binaries for release
     image: ubuntu
     commands:
-      - ./compress_release.sh
       - find ./dist -type f -executable -execdir tar -czvf {}.tar.gz {} \;
-
-  - name: upload gitea pre-release
-    image: plugins/gitea-release
-    settings:
-      title: Unstable ($DRONE_BRANCH)
-      files: dist/*.tar.gz
-      prerelease: true
-      checksum:
-        - md5
-        - sha1
-        - sha256
-        - sha512
-      base_url:
-        from_secret: gitea_base_url
-      api_key:
-        from_secret: gitea_token
     when:
-      event: push
+      event: tag
 
   - name: upload gitea release
     image: plugins/gitea-release
