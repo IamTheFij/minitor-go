@@ -18,11 +18,13 @@ func TestAlertIsValid(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+
 		actual := c.alert.IsValid()
 		if actual != c.expected {
 			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expected, actual)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -100,17 +102,25 @@ func TestAlertSend(t *testing.T) {
 		log.Printf("Testing case %s", c.name)
 		// Set PyCompat to value of compat flag
 		PyCompat = c.pyCompat
-		c.alert.BuildTemplates()
+
+		err := c.alert.BuildTemplates()
+		if err != nil {
+			t.Errorf("Send(%v output), error building templates: %v", c.name, err)
+		}
+
 		output, err := c.alert.Send(c.notice)
 		hasErr := (err != nil)
+
 		if output != c.expectedOutput {
 			t.Errorf("Send(%v output), expected=%v actual=%v", c.name, c.expectedOutput, output)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		if hasErr != c.expectErr {
 			t.Errorf("Send(%v err), expected=%v actual=%v", c.name, "Err", err)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		// Set PyCompat back to default value
 		PyCompat = false
 		log.Println("-----")
@@ -120,10 +130,12 @@ func TestAlertSend(t *testing.T) {
 func TestAlertSendNoTemplates(t *testing.T) {
 	alert := Alert{}
 	notice := AlertNotice{}
+
 	output, err := alert.Send(notice)
 	if err == nil {
 		t.Errorf("Send(no template), expected=%v actual=%v", "Err", output)
 	}
+
 	log.Println("-----")
 }
 
@@ -142,10 +154,12 @@ func TestAlertBuildTemplate(t *testing.T) {
 		log.Printf("Testing case %s", c.name)
 		err := c.alert.BuildTemplates()
 		hasErr := (err != nil)
+
 		if hasErr != c.expectErr {
 			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expectErr, err)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }

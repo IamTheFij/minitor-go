@@ -40,7 +40,7 @@ func (monitor Monitor) ShouldCheck() bool {
 		return true
 	}
 
-	sinceLastCheck := time.Now().Sub(monitor.lastCheck).Seconds()
+	sinceLastCheck := time.Since(monitor.lastCheck).Seconds()
 	return sinceLastCheck >= monitor.CheckInterval
 }
 
