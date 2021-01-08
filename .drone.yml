@@ -54,6 +54,29 @@ steps:
     commands:
       - make all-linux
 
+  - name: compress binaries for release
+    image: busybox
+      - find ./dist -type f -perm +111 -execdir tar -czvf {}.tar.gz {} \;
+    when:
+      event: tag
+
+  - name: upload gitea release
+    image: plugins/gitea-release
+    settings:
+      title: ${DRONE_TAG}
+      files: dist/*.tar.gz
+      checksum:
+        - md5
+        - sha1
+        - sha256
+        - sha512
+      base_url:
+        from_secret: gitea_base_url
+      api_key:
+        from_secret: gitea_token
+    when:
+      event: tag
+
   - name: push image - arm
     image: plugins/docker
     settings:
