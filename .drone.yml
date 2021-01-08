@@ -3,21 +3,15 @@ kind: pipeline
 name: test
 
 steps:
-
-  - name: skip
-    image: busybox
+  - name: test
+    image: golang:1.12
+    environment:
+      VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
     commands:
-      - echo ok
+      - make test
 
-  # - name: test
-  #   image: golang:1.12
-  #   environment:
-  #     VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
-  #   commands:
-  #     - make test
-  #
-  # - name: check
-  #   image: iamthefij/drone-pre-commit:personal
+  - name: check
+    image: iamthefij/drone-pre-commit:personal
 
 ---
 kind: pipeline
@@ -31,9 +25,8 @@ trigger:
     - push
     - tag
   refs:
-    include:
-      - refs/heads/master
-      - refs/tags/v*
+    - refs/heads/master
+    - refs/tags/v*
 
 steps:
   - name: build all binaries
@@ -41,8 +34,7 @@ steps:
     environment:
       VERSION: ${DRONE_TAG:-${DRONE_COMMIT}}
     commands:
-      # - make all
-      - make dist/minitor-linux-amd64
+      - make all
 
   - name: compress binaries for release
     image: ubuntu
