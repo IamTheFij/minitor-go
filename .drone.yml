@@ -49,6 +49,7 @@ steps:
       - pwd
       - ls
       - ./compress_release.sh
+      - find ./dist -type f -perm +111 -execdir tar -czvf {}.tar.gz {} \;
 
   - name: upload gitea pre-release
     image: plugins/gitea-release
