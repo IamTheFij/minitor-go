@@ -53,7 +53,7 @@ steps:
 
   - name: compress binaries for release
     image: busybox
-      - find ./dist -type f -perm +111 -execdir tar -czvf {}.tar.gz {} \;
+      - ./compress_release.sh
 
   - name: upload gitea pre-release
     image: plugins/gitea-release
