@@ -58,7 +58,7 @@ steps:
   - name: upload gitea pre-release
     image: plugins/gitea-release
     settings:
-      title: Bleeding edge
+      title: Unstable ($DRONE_BRANCH)
       files: dist/*.tar.gz
       prerelease: true
       checksum:
