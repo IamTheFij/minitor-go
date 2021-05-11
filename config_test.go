@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"testing"
+	"time"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -35,9 +36,35 @@ func TestLoadConfig(t *testing.T) {
 
 		// Set PyCompat to default value
 		PyCompat = false
-
-		log.Println("-----")
 	}
+}
+
+func TestIntervalParsing(t *testing.T) {
+	log.Printf("Testing case TestIntervalParsing")
+
+	config, err := LoadConfig("./test/valid-config.yml")
+	if err != nil {
+		t.Errorf("Failed loading config: %v", err)
+	}
+
+	oneSecond := time.Second
+	tenSeconds := 10 * time.Second
+	oneMinute := time.Minute
+
+	// validate top level interval seconds represented as an int
+	if config.CheckInterval != oneSecond {
+		t.Errorf("Incorrectly parsed int seconds. expected=%v actual=%v", oneSecond, config.CheckInterval)
+	}
+
+	if config.Monitors[0].CheckInterval != tenSeconds {
+		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
+	}
+
+	if config.Monitors[1].CheckInterval != oneMinute {
+		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
+	}
+
+	log.Println("-----")
 }
 
 // TestMultiLineConfig is a more complicated test stepping through the parsing
