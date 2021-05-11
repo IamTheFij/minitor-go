@@ -11,9 +11,9 @@ import (
 // Monitor represents a particular periodic check of a command
 type Monitor struct { //nolint:maligned
 	// Config values
-	AlertAfter    int16   `yaml:"alert_after"`
-	AlertEvery    int16   `yaml:"alert_every"`
-	CheckInterval float64 `yaml:"check_interval"`
+	AlertAfter    int16         `yaml:"alert_after"`
+	AlertEvery    int16         `yaml:"alert_every"`
+	CheckInterval time.Duration `yaml:"check_interval"`
 	Name          string
 	AlertDown     []string `yaml:"alert_down"`
 	AlertUp       []string `yaml:"alert_up"`
@@ -43,7 +43,7 @@ func (monitor Monitor) ShouldCheck() bool {
 		return true
 	}
 
-	sinceLastCheck := time.Since(monitor.lastCheck).Seconds()
+	sinceLastCheck := time.Since(monitor.lastCheck)
 
 	return sinceLastCheck >= monitor.CheckInterval
 }

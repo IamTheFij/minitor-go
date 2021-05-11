@@ -120,7 +120,6 @@ func main() {
 			panic(err)
 		}
 
-		sleepTime := time.Duration(config.CheckInterval) * time.Second
-		time.Sleep(sleepTime)
+		time.Sleep(config.CheckInterval)
 	}
 }

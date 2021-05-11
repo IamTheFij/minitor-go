@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"io/ioutil"
+	"time"
 
 	"git.iamthefij.com/iamthefij/slog"
 	"gopkg.in/yaml.v2"
@@ -12,7 +13,7 @@ var errInvalidConfig = errors.New("Invalid configuration")
 
 // Config type is contains all provided user configuration
 type Config struct {
-	CheckInterval int64 `yaml:"check_interval"`
+	CheckInterval time.Duration `yaml:"check_interval"`
 	Monitors      []*Monitor
 	Alerts        map[string]*Alert
 }
