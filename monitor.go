@@ -9,21 +9,22 @@ import (
 )
 
 // Monitor represents a particular periodic check of a command
-type Monitor struct {
+type Monitor struct { //nolint:maligned
 	// Config values
+	AlertAfter    int16   `yaml:"alert_after"`
+	AlertEvery    int16   `yaml:"alert_every"`
+	CheckInterval float64 `yaml:"check_interval"`
 	Name          string
-	Command       CommandOrShell
 	AlertDown     []string `yaml:"alert_down"`
 	AlertUp       []string `yaml:"alert_up"`
-	CheckInterval float64  `yaml:"check_interval"`
-	AlertAfter    int16    `yaml:"alert_after"`
-	AlertEvery    int16    `yaml:"alert_every"`
+	Command       CommandOrShell
+
 	// Other values
-	lastCheck    time.Time
-	lastOutput   string
 	alertCount   int16
 	failureCount int16
+	lastCheck    time.Time
 	lastSuccess  time.Time
+	lastOutput   string
 }
 
 // IsValid returns a boolean indicating if the Monitor has been correctly
@@ -42,6 +43,7 @@ func (monitor Monitor) ShouldCheck() bool {
 	}
 
 	sinceLastCheck := time.Since(monitor.lastCheck).Seconds()
+
 	return sinceLastCheck >= monitor.CheckInterval
 }
 
@@ -60,6 +62,7 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	monitor.lastOutput = string(output)
 
 	var alertNotice *AlertNotice
+
 	isSuccess := (err == nil)
 	if isSuccess {
 		alertNotice = monitor.success()
@@ -90,6 +93,7 @@ func (monitor *Monitor) success() (notice *AlertNotice) {
 		// Alert that we have recovered
 		notice = monitor.createAlertNotice(true)
 	}
+
 	monitor.failureCount = 0
 	monitor.alertCount = 0
 	monitor.lastSuccess = time.Now()
@@ -116,19 +120,20 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	failureCount := (monitor.failureCount - monitor.getAlertAfter())
 
 	// Use alert cadence to determine if we should alert
-	if monitor.AlertEvery > 0 {
+	switch {
+	case monitor.AlertEvery > 0:
 		// Handle integer number of failures before alerting
 		if failureCount%monitor.AlertEvery == 0 {
 			notice = monitor.createAlertNotice(false)
 		}
-	} else if monitor.AlertEvery == 0 {
+	case monitor.AlertEvery == 0:
 		// Handle alerting on first failure only
 		if failureCount == 0 {
 			notice = monitor.createAlertNotice(false)
 		}
-	} else {
+	default:
 		// Handle negative numbers indicating an exponential backoff
-		if failureCount >= int16(math.Pow(2, float64(monitor.alertCount))-1) {
+		if failureCount >= int16(math.Pow(2, float64(monitor.alertCount))-1) { //nolint:gomnd
 			notice = monitor.createAlertNotice(false)
 		}
 	}
@@ -138,7 +143,7 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 		monitor.alertCount++
 	}
 
-	return
+	return notice
 }
 
 func (monitor Monitor) getAlertAfter() int16 {
@@ -147,6 +152,7 @@ func (monitor Monitor) getAlertAfter() int16 {
 	if monitor.AlertAfter == 0 {
 		return 1
 	}
+
 	return monitor.AlertAfter
 }
 
@@ -155,6 +161,7 @@ func (monitor Monitor) GetAlertNames(up bool) []string {
 	if up {
 		return monitor.AlertUp
 	}
+
 	return monitor.AlertDown
 }
 

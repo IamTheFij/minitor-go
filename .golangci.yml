@@ -1,0 +1,48 @@
+---
+linters:
+  enable:
+    - asciicheck
+    - bodyclose
+    - dogsled
+    - dupl
+    - exhaustive
+    - gochecknoinits
+    - gocognit
+    - gocritic
+    - gocyclo
+    - goerr113
+    - gofumpt
+    - goimports
+    - gomnd
+    - goprintffuncname
+    # - gosec
+    # - ifshort
+    - interfacer
+    - maligned
+    - misspell
+    - nakedret
+    - nestif
+    - nlreturn
+    - noctx
+    - unparam
+    - wsl
+    # - errorlint
+  disable:
+    - gochecknoglobals
+
+linters-settings:
+  gosec:
+    excludes:
+      - G204
+#   gomnd:
+#     settings:
+#       mnd:
+#         ignored-functions: math.*
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gosec
+        - maligned

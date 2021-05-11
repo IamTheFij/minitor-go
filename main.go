@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"time"
@@ -21,7 +22,48 @@ var (
 
 	// version of minitor being run
 	version = "dev"
+
+	errUnknownAlert = errors.New("unknown alert")
 )
+
+func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) error {
+	slog.Debugf("Received an alert notice from %s", alertNotice.MonitorName)
+	alertNames := monitor.GetAlertNames(alertNotice.IsUp)
+
+	if alertNames == nil {
+		// This should only happen for a recovery alert. AlertDown is validated not empty
+		slog.Warningf(
+			"Received alert, but no alert mechanisms exist. MonitorName=%s IsUp=%t",
+			alertNotice.MonitorName, alertNotice.IsUp,
+		)
+	}
+
+	for _, alertName := range alertNames {
+		if alert, ok := config.Alerts[alertName]; ok {
+			output, err := alert.Send(*alertNotice)
+			if err != nil {
+				slog.Errorf(
+					"Alert '%s' failed. result=%v: output=%s",
+					alert.Name,
+					err,
+					output,
+				)
+
+				return err
+			}
+
+			// Count alert metrics
+			Metrics.CountAlert(monitor.Name, alert.Name)
+		} else {
+			// This case should never actually happen since we validate against it
+			slog.Errorf("Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
+
+			return fmt.Errorf("unknown alert for monitor %s: %s: %w", alertNotice.MonitorName, alertName, errUnknownAlert)
+		}
+	}
+
+	return nil
+}
 
 func checkMonitors(config *Config) error {
 	for _, monitor := range config.Monitors {
@@ -34,44 +76,8 @@ func checkMonitors(config *Config) error {
 			Metrics.SetMonitorStatus(monitor.Name, monitor.IsUp())
 			Metrics.CountCheck(monitor.Name, success, hasAlert)
 
-			// Should probably consider refactoring everything below here
 			if alertNotice != nil {
-				slog.Debugf("Received an alert notice from %s", alertNotice.MonitorName)
-				alertNames := monitor.GetAlertNames(alertNotice.IsUp)
-				if alertNames == nil {
-					// This should only happen for a recovery alert. AlertDown is validated not empty
-					slog.Warningf(
-						"Received alert, but no alert mechanisms exist. MonitorName=%s IsUp=%t",
-						alertNotice.MonitorName, alertNotice.IsUp,
-					)
-				}
-				for _, alertName := range alertNames {
-					if alert, ok := config.Alerts[alertName]; ok {
-						output, err := alert.Send(*alertNotice)
-						if err != nil {
-							slog.Errorf(
-								"Alert '%s' failed. result=%v: output=%s",
-								alert.Name,
-								err,
-								output,
-							)
-							return fmt.Errorf(
-								"Unsuccessfully triggered alert '%s'. "+
-									"Crashing to avoid false negatives: %v",
-								alert.Name,
-								err,
-							)
-						}
-
-						// Count alert metrics
-						Metrics.CountAlert(monitor.Name, alert.Name)
-					} else {
-						// This case should never actually happen since we validate against it
-						slog.Errorf("Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
-
-						return fmt.Errorf("Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
-					}
-				}
+				return sendAlerts(config, monitor, alertNotice)
 			}
 		}
 	}

@@ -22,11 +22,13 @@ func TestMonitorIsValid(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+
 		actual := c.monitor.IsValid()
 		if actual != c.expected {
 			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expected, actual)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -71,11 +73,13 @@ func TestMonitorIsUp(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+
 		actual := c.monitor.IsUp()
 		if actual != c.expected {
 			t.Errorf("IsUp(%v), expected=%t actual=%t", c.name, c.expected, actual)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -96,11 +100,13 @@ func TestMonitorGetAlertNames(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+
 		actual := c.monitor.GetAlertNames(c.up)
 		if !EqualSliceString(actual, c.expected) {
 			t.Errorf("GetAlertNames(%v), expected=%v actual=%v", c.name, c.expected, actual)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -119,12 +125,15 @@ func TestMonitorSuccess(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+
 		notice := c.monitor.success()
 		hasNotice := (notice != nil)
+
 		if hasNotice != c.expectNotice {
 			t.Errorf("success(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -147,12 +156,15 @@ func TestMonitorFailureAlertAfter(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
+
 		notice := c.monitor.failure()
 		hasNotice := (notice != nil)
+
 		if hasNotice != c.expectNotice {
 			t.Errorf("failure(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -195,10 +207,12 @@ func TestMonitorFailureAlertEvery(t *testing.T) {
 
 		notice := c.monitor.failure()
 		hasNotice := (notice != nil)
+
 		if hasNotice != c.expectNotice {
 			t.Errorf("failure(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -223,15 +237,18 @@ func TestMonitorFailureExponential(t *testing.T) {
 	// Unlike previous tests, this one requires a static Monitor with repeated
 	// calls to the failure method
 	monitor := Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: -1}
+
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
 
 		notice := monitor.failure()
 		hasNotice := (notice != nil)
+
 		if hasNotice != c.expectNotice {
 			t.Errorf("failure(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }
@@ -243,6 +260,7 @@ func TestMonitorCheck(t *testing.T) {
 		hasNotice  bool
 		lastOutput string
 	}
+
 	cases := []struct {
 		monitor Monitor
 		expect  expected
@@ -290,6 +308,7 @@ func TestMonitorCheck(t *testing.T) {
 			t.Errorf("Check(%v) (output), expected=%v actual=%v", c.name, c.expect.lastOutput, lastOutput)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		log.Println("-----")
 	}
 }

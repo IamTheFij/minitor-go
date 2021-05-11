@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -9,6 +10,13 @@ import (
 	"time"
 
 	"git.iamthefij.com/iamthefij/slog"
+)
+
+var (
+	errNoTemplate = errors.New("no template")
+
+	// ErrAlertFailed indicates that an alert failed to send
+	ErrAlertFailed = errors.New("alert failed")
 )
 
 // Alert is a config driven mechanism for sending a notice
@@ -21,12 +29,12 @@ type Alert struct {
 
 // AlertNotice captures the context for an alert to be sent
 type AlertNotice struct {
-	MonitorName     string
 	AlertCount      int16
 	FailureCount    int16
-	LastCheckOutput string
-	LastSuccess     time.Time
 	IsUp            bool
+	LastSuccess     time.Time
+	MonitorName     string
+	LastCheckOutput string
 }
 
 // IsValid returns a boolean indicating if the Alert has been correctly
@@ -49,26 +57,30 @@ func (alert *Alert) BuildTemplates() error {
 
 	slog.Debugf("Building template for alert %s", alert.Name)
 
-	if alert.commandTemplate == nil && alert.Command.Command != nil {
+	switch {
+	case alert.commandTemplate == nil && alert.Command.Command != nil:
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command.Command {
 			if PyCompat {
 				cmdPart = legacy.Replace(cmdPart)
 			}
+
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+fmt.Sprint(i)).Parse(cmdPart),
 			))
 		}
-	} else if alert.commandShellTemplate == nil && alert.Command.ShellCommand != "" {
+	case alert.commandShellTemplate == nil && alert.Command.ShellCommand != "":
 		shellCmd := alert.Command.ShellCommand
+
 		if PyCompat {
 			shellCmd = legacy.Replace(shellCmd)
 		}
+
 		alert.commandShellTemplate = template.Must(
 			template.New(alert.Name).Parse(shellCmd),
 		)
-	} else {
-		return fmt.Errorf("No template provided for alert %s", alert.Name)
+	default:
+		return fmt.Errorf("No template provided for alert %s: %w", alert.Name, errNoTemplate)
 	}
 
 	return nil
@@ -79,28 +91,37 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 	slog.Infof("Sending alert %s for %s", alert.Name, notice.MonitorName)
 
 	var cmd *exec.Cmd
-	if alert.commandTemplate != nil {
+
+	switch {
+	case alert.commandTemplate != nil:
 		command := []string{}
+
 		for _, cmdTmp := range alert.commandTemplate {
 			var commandBuffer bytes.Buffer
+
 			err = cmdTmp.Execute(&commandBuffer, notice)
 			if err != nil {
 				return
 			}
+
 			command = append(command, commandBuffer.String())
 		}
+
 		cmd = exec.Command(command[0], command[1:]...)
-	} else if alert.commandShellTemplate != nil {
+	case alert.commandShellTemplate != nil:
 		var commandBuffer bytes.Buffer
+
 		err = alert.commandShellTemplate.Execute(&commandBuffer, notice)
 		if err != nil {
 			return
 		}
+
 		shellCommand := commandBuffer.String()
 
 		cmd = ShellCommand(shellCommand)
-	} else {
-		err = fmt.Errorf("No templates compiled for alert %v", alert.Name)
+	default:
+		err = fmt.Errorf("No templates compiled for alert %s: %w", alert.Name, errNoTemplate)
+
 		return
 	}
 
@@ -113,6 +134,15 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 	output, err = cmd.CombinedOutput()
 	outputStr = string(output)
 	slog.Debugf("Alert output for: %s\n---\n%s\n---", alert.Name, outputStr)
+
+	if err != nil {
+		err = fmt.Errorf(
+			"Alert '%s' failed to send. Returned %v: %w",
+			alert.Name,
+			err,
+			ErrAlertFailed,
+		)
+	}
 
 	return outputStr, err
 }

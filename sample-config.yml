@@ -3,14 +3,14 @@ check_interval: 5
 
 monitors:
   - name: Fake Website
-    command: ['curl', '-s', '-o', '/dev/null', 'https://minitor.mon']
+    command: ["curl", "-s", "-o", "/dev/null", "https://minitor.mon"]
     alert_down: [log_down, mailgun_down, sms_down]
     alert_up: [log_up, email_up]
-    check_interval: 10  # Must be at minimum the global `check_interval`
+    check_interval: 10 # Must be at minimum the global `check_interval`
     alert_after: 3
-    alert_every: -1  # Defaults to -1 for exponential backoff. 0 to disable repeating
+    alert_every: -1 # Defaults to -1 for exponential backoff. 0 to disable repeating
   - name: Real Website
-    command: ['curl', '-s', '-o', '/dev/null', 'https://google.com']
+    command: ["curl", "-s", "-o", "/dev/null", "https://google.com"]
     alert_down: [log_down, mailgun_down, sms_down]
     alert_up: [log_up, email_up]
     check_interval: 5
@@ -23,7 +23,8 @@ alerts:
   log_up:
     command: ["echo", "Minitor recovery for {{.MonitorName}}"]
   email_up:
-    command: [sendmail, "me@minitor.mon", "Recovered: {monitor_name}", "We're back!"]
+    command:
+      [sendmail, "me@minitor.mon", "Recovered: {monitor_name}", "We're back!"]
   mailgun_down:
     command: >
       curl -s -X POST

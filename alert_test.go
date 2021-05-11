@@ -123,6 +123,7 @@ func TestAlertSend(t *testing.T) {
 
 		// Set PyCompat back to default value
 		PyCompat = false
+
 		log.Println("-----")
 	}
 }

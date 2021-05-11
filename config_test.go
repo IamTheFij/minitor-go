@@ -27,12 +27,15 @@ func TestLoadConfig(t *testing.T) {
 		PyCompat = c.pyCompat
 		_, err := LoadConfig(c.configPath)
 		hasErr := (err != nil)
+
 		if hasErr != c.expectErr {
 			t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectErr, err)
 			log.Printf("Case failed: %s", c.name)
 		}
+
 		// Set PyCompat to default value
 		PyCompat = false
+
 		log.Println("-----")
 	}
 }
@@ -41,6 +44,7 @@ func TestLoadConfig(t *testing.T) {
 // and execution of mutli-line strings presented in YAML
 func TestMultiLineConfig(t *testing.T) {
 	log.Println("Testing multi-line string config")
+
 	config, err := LoadConfig("./test/valid-verify-multi-line.yml")
 	if err != nil {
 		t.Fatalf("TestMultiLineConfig(load), expected=no_error actual=%v", err)
@@ -48,8 +52,10 @@ func TestMultiLineConfig(t *testing.T) {
 
 	log.Println("-----")
 	log.Println("TestMultiLineConfig(parse > string)")
+
 	expected := "echo 'Some string with stuff'; echo \"<angle brackets>\"; exit 1\n"
 	actual := config.Monitors[0].Command.ShellCommand
+
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(>) failed")
 		t.Logf("string expected=`%v`", expected)
@@ -60,12 +66,15 @@ func TestMultiLineConfig(t *testing.T) {
 
 	log.Println("-----")
 	log.Println("TestMultiLineConfig(execute > string)")
+
 	_, notice := config.Monitors[0].Check()
 	if notice == nil {
 		t.Fatalf("Did not receive an alert notice")
 	}
+
 	expected = "Some string with stuff\n<angle brackets>\n"
 	actual = notice.LastCheckOutput
+
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(execute > string) check failed")
 		t.Logf("string expected=`%v`", expected)
@@ -76,8 +85,10 @@ func TestMultiLineConfig(t *testing.T) {
 
 	log.Println("-----")
 	log.Println("TestMultiLineConfig(parse | string)")
+
 	expected = "echo 'Some string with stuff'\necho '<angle brackets>'\n"
 	actual = config.Alerts["log_shell"].Command.ShellCommand
+
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(|) failed")
 		t.Logf("string expected=`%v`", expected)
@@ -88,10 +99,12 @@ func TestMultiLineConfig(t *testing.T) {
 
 	log.Println("-----")
 	log.Println("TestMultiLineConfig(execute | string)")
+
 	actual, err = config.Alerts["log_shell"].Send(AlertNotice{})
 	if err != nil {
 		t.Errorf("Execution of alert failed")
 	}
+
 	expected = "Some string with stuff\n<angle brackets>\n"
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(execute | string) check failed")

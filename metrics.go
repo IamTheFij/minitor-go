@@ -63,6 +63,7 @@ func (metrics *MinitorMetrics) SetMonitorStatus(monitor string, isUp bool) {
 	if isUp {
 		val = 1.0
 	}
+
 	metrics.monitorStatus.With(prometheus.Labels{"monitor": monitor}).Set(val)
 }
 
@@ -96,6 +97,8 @@ func (metrics *MinitorMetrics) CountAlert(monitor string, alert string) {
 // ServeMetrics starts an http server with a Prometheus metrics handler
 func ServeMetrics() {
 	http.Handle("/metrics", promhttp.Handler())
+
 	host := fmt.Sprintf(":%d", MetricsPort)
+
 	_ = http.ListenAndServe(host, nil)
 }

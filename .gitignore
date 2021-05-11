@@ -17,4 +17,5 @@ config.yml
 
 # Output binary
 minitor
+minitor-go
 dist/

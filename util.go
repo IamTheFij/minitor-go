@@ -17,10 +17,12 @@ func EqualSliceString(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i, val := range a {
 		if val != b[i] {
 			return false
 		}
 	}
+
 	return true
 }

@@ -8,6 +8,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+var errInvalidConfig = errors.New("Invalid configuration")
+
 // Config type is contains all provided user configuration
 type Config struct {
 	CheckInterval int64 `yaml:"check_interval"`
@@ -35,14 +37,17 @@ func (cos *CommandOrShell) UnmarshalYAML(unmarshal func(interface{}) error) erro
 	// Error indicates this is shell command
 	if err != nil {
 		var shellCmd string
+
 		err := unmarshal(&shellCmd)
 		if err != nil {
 			return err
 		}
+
 		cos.ShellCommand = shellCmd
 	} else {
 		cos.Command = cmd
 	}
+
 	return nil
 }
 
@@ -57,11 +62,14 @@ func (config Config) IsValid() (isValid bool) {
 
 		isValid = false
 	}
+
 	for _, alert := range config.Alerts {
 		if !alert.IsValid() {
-			slog.Errorf("Invalid alert configuration: %s", alert.Name)
+			slog.Errorf("Invalid alert configuration: %+v", alert.Name)
 
 			isValid = false
+		} else {
+			slog.Debugf("Loaded alert %s", alert.Name)
 		}
 	}
 
@@ -71,6 +79,7 @@ func (config Config) IsValid() (isValid bool) {
 
 		isValid = false
 	}
+
 	for _, monitor := range config.Monitors {
 		if !monitor.IsValid() {
 			slog.Errorf("Invalid monitor configuration: %s", monitor.Name)
@@ -85,13 +94,14 @@ func (config Config) IsValid() (isValid bool) {
 						"Invalid monitor configuration: %s. Unknown alert %s",
 						monitor.Name, alertName,
 					)
+
 					isValid = false
 				}
 			}
 		}
 	}
 
-	return
+	return isValid
 }
 
 // Init performs extra initialization on top of loading the config from file
@@ -122,22 +132,26 @@ func LoadConfig(filePath string) (config Config, err error) {
 
 	// Add log alert if not present
 	if PyCompat {
-		// Intialize alerts list if not present
+		// Initialize alerts list if not present
 		if config.Alerts == nil {
 			config.Alerts = map[string]*Alert{}
 		}
+
 		if _, ok := config.Alerts["log"]; !ok {
 			config.Alerts["log"] = NewLogAlert()
 		}
 	}
 
-	if !config.IsValid() {
-		err = errors.New("Invalid configuration")
+	// Finish initializing configuration
+	if err = config.Init(); err != nil {
 		return
 	}
 
-	// Finish initializing configuration
-	err = config.Init()
+	if !config.IsValid() {
+		err = errInvalidConfig
 
-	return
+		return
+	}
+
+	return config, err
 }
