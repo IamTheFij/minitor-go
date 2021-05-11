@@ -3,11 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
 	"text/template"
 	"time"
+
+	"git.iamthefij.com/iamthefij/slog"
 )
 
 // Alert is a config driven mechanism for sending a notice
@@ -45,9 +46,9 @@ func (alert *Alert) BuildTemplates() error {
 		"{last_success}", "{{.LastSuccess}}",
 		"{monitor_name}", "{{.MonitorName}}",
 	)
-	if LogDebug {
-		log.Printf("DEBUG: Building template for alert %s", alert.Name)
-	}
+
+	slog.Debugf("Building template for alert %s", alert.Name)
+
 	if alert.commandTemplate == nil && alert.Command.Command != nil {
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command.Command {
@@ -75,7 +76,8 @@ func (alert *Alert) BuildTemplates() error {
 
 // Send will send an alert notice by executing the command template
 func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
-	log.Printf("INFO: Sending alert %s for %s", alert.Name, notice.MonitorName)
+	slog.Infof("Sending alert %s for %s", alert.Name, notice.MonitorName)
+
 	var cmd *exec.Cmd
 	if alert.commandTemplate != nil {
 		command := []string{}
@@ -110,9 +112,7 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 	var output []byte
 	output, err = cmd.CombinedOutput()
 	outputStr = string(output)
-	if LogDebug {
-		log.Printf("DEBUG: Alert output for: %s\n---\n%s\n---", alert.Name, outputStr)
-	}
+	slog.Debugf("Alert output for: %s\n---\n%s\n---", alert.Name, outputStr)
 
 	return outputStr, err
 }

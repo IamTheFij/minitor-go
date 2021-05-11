@@ -3,14 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"time"
+
+	"git.iamthefij.com/iamthefij/slog"
 )
 
 var (
-	// LogDebug will control whether debug messsages should be logged
-	LogDebug = false
-
 	// ExportMetrics will track whether or not we want to export metrics to prometheus
 	ExportMetrics = false
 	// MetricsPort is the port to expose metrics on
@@ -38,14 +36,12 @@ func checkMonitors(config *Config) error {
 
 			// Should probably consider refactoring everything below here
 			if alertNotice != nil {
-				if LogDebug {
-					log.Printf("DEBUG: Recieved an alert notice from %s", alertNotice.MonitorName)
-				}
+				slog.Debugf("Received an alert notice from %s", alertNotice.MonitorName)
 				alertNames := monitor.GetAlertNames(alertNotice.IsUp)
 				if alertNames == nil {
 					// This should only happen for a recovery alert. AlertDown is validated not empty
-					log.Printf(
-						"WARNING: Recieved alert, but no alert mechanisms exist. MonitorName=%s IsUp=%t",
+					slog.Warningf(
+						"Received alert, but no alert mechanisms exist. MonitorName=%s IsUp=%t",
 						alertNotice.MonitorName, alertNotice.IsUp,
 					)
 				}
@@ -53,8 +49,8 @@ func checkMonitors(config *Config) error {
 					if alert, ok := config.Alerts[alertName]; ok {
 						output, err := alert.Send(*alertNotice)
 						if err != nil {
-							log.Printf(
-								"ERROR: Alert '%s' failed. result=%v: output=%s",
+							slog.Errorf(
+								"Alert '%s' failed. result=%v: output=%s",
 								alert.Name,
 								err,
 								output,
@@ -71,7 +67,8 @@ func checkMonitors(config *Config) error {
 						Metrics.CountAlert(monitor.Name, alert.Name)
 					} else {
 						// This case should never actually happen since we validate against it
-						log.Printf("ERROR: Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
+						slog.Errorf("Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
+
 						return fmt.Errorf("Unknown alert for monitor %s: %s", alertNotice.MonitorName, alertName)
 					}
 				}
@@ -83,30 +80,30 @@ func checkMonitors(config *Config) error {
 }
 
 func main() {
-	// Get debug flag
-	flag.BoolVar(&LogDebug, "debug", false, "Enables debug logs (default: false)")
+	showVersion := flag.Bool("version", false, "Display the version of minitor and exit")
+	configPath := flag.String("config", "config.yml", "Alternate configuration path (default: config.yml)")
+
+	flag.BoolVar(&slog.DebugLevel, "debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
 	flag.BoolVar(&PyCompat, "py-compat", false, "Enables support for legacy Python Minitor config. Will eventually be removed. (default: false)")
 	flag.IntVar(&MetricsPort, "metrics-port", 8080, "The port that Prometheus metrics should be exported on, if enabled. (default: 8080)")
-	var showVersion = flag.Bool("version", false, "Display the version of minitor and exit")
-	var configPath = flag.String("config", "config.yml", "Alternate configuration path (default: config.yml)")
 	flag.Parse()
 
 	// Print version if flag is provided
 	if *showVersion {
-		log.Println("Minitor version:", version)
+		fmt.Println("Minitor version:", version)
+
 		return
 	}
 
 	// Load configuration
 	config, err := LoadConfig(*configPath)
-	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
-	}
+	slog.OnErrFatalf(err, "Error loading config: %v", err)
 
 	// Serve metrics exporter, if specified
 	if ExportMetrics {
-		log.Println("INFO: Exporting metrics to Prometheus")
+		slog.Infof("Exporting metrics to Prometheus")
+
 		go ServeMetrics()
 	}
 

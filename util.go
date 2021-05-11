@@ -8,7 +8,7 @@ import (
 // ShellCommand takes a string and executes it as a command using `sh`
 func ShellCommand(command string) *exec.Cmd {
 	shellCommand := []string{"sh", "-c", strings.TrimSpace(command)}
-	//log.Printf("Shell command: %v", shellCommand)
+
 	return exec.Command(shellCommand[0], shellCommand[1:]...)
 }
 

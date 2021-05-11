@@ -149,7 +149,6 @@ For the time being, legacy configs for the Python version of Minitor should be c
 
 Future, potentially breaking changes
 
-  - [ ] Implement leveled logging (maybe glog or logrus)
   - [ ] Consider value of templating vs injecting values into Env variables
   - [ ] Async checking
   - [ ] Revisit metrics and see if they all make sense

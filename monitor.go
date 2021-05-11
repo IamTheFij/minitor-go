@@ -1,10 +1,11 @@
 package main
 
 import (
-	"log"
 	"math"
 	"os/exec"
 	"time"
+
+	"git.iamthefij.com/iamthefij/slog"
 )
 
 // Monitor represents a particular periodic check of a command
@@ -66,17 +67,11 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 		alertNotice = monitor.failure()
 	}
 
-	if LogDebug {
-		log.Printf("DEBUG: Command output: %s", monitor.lastOutput)
-	}
-	if err != nil {
-		if LogDebug {
-			log.Printf("DEBUG: Command result: %v", err)
-		}
-	}
+	slog.Debugf("Command output: %s", monitor.lastOutput)
+	slog.OnErrWarnf(err, "Command result: %v", err)
 
-	log.Printf(
-		"INFO: %s success=%t, alert=%t",
+	slog.Infof(
+		"%s success=%t, alert=%t",
 		monitor.Name,
 		isSuccess,
 		alertNotice != nil,
@@ -106,15 +101,14 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
 	if monitor.failureCount < monitor.getAlertAfter() {
-		if LogDebug {
-			log.Printf(
-				"DEBUG: %s failed but did not hit minimum failures. "+
-					"Count: %v alert after: %v",
-				monitor.Name,
-				monitor.failureCount,
-				monitor.getAlertAfter(),
-			)
-		}
+		slog.Debugf(
+			"%s failed but did not hit minimum failures. "+
+				"Count: %v alert after: %v",
+			monitor.Name,
+			monitor.failureCount,
+			monitor.getAlertAfter(),
+		)
+
 		return
 	}
 
