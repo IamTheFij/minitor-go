@@ -16,8 +16,7 @@ repos:
       - id: go-fmt
       - id: go-imports
       - id: golangci-lint
-  # - repo: https://github.com/IamTheFij/docker-pre-commit
-  #   rev: v2.0.0
-  #   hooks:
-  #     - id: docker-compose-check
-  #     - id: hadolint
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.4.0
+    hooks:
+      - id: hadolint
