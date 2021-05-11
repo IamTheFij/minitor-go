@@ -19,6 +19,7 @@ import (
 type MinitorMetrics struct {
 	alertCount    *prometheus.CounterVec
 	checkCount    *prometheus.CounterVec
+	checkTime     *prometheus.GaugeVec
 	monitorStatus *prometheus.GaugeVec
 }
 
@@ -40,6 +41,13 @@ func NewMetrics() *MinitorMetrics {
 			},
 			[]string{"monitor", "status", "is_alert"},
 		),
+		checkTime: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
+				Name: "minitor_check_milliseconds",
+				Help: "Time in miliseconds that a check ran for",
+			},
+			[]string{"monitor", "status"},
+		),
 		monitorStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Name: "minitor_monitor_up_count",
@@ -52,6 +60,7 @@ func NewMetrics() *MinitorMetrics {
 	// Register newly created metrics
 	prometheus.MustRegister(metrics.alertCount)
 	prometheus.MustRegister(metrics.checkCount)
+	prometheus.MustRegister(metrics.checkTime)
 	prometheus.MustRegister(metrics.monitorStatus)
 
 	return metrics
@@ -68,7 +77,7 @@ func (metrics *MinitorMetrics) SetMonitorStatus(monitor string, isUp bool) {
 }
 
 // CountCheck counts the result of a particular Monitor check
-func (metrics *MinitorMetrics) CountCheck(monitor string, isSuccess bool, isAlert bool) {
+func (metrics *MinitorMetrics) CountCheck(monitor string, isSuccess bool, ms int64, isAlert bool) {
 	status := "failure"
 	if isSuccess {
 		status = "success"
@@ -82,6 +91,10 @@ func (metrics *MinitorMetrics) CountCheck(monitor string, isSuccess bool, isAler
 	metrics.checkCount.With(
 		prometheus.Labels{"monitor": monitor, "status": status, "is_alert": alertVal},
 	).Inc()
+
+	metrics.checkTime.With(
+		prometheus.Labels{"monitor": monitor, "status": status},
+	).Set(float64(ms))
 }
 
 // CountAlert counts an alert

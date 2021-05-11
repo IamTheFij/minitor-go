@@ -20,11 +20,12 @@ type Monitor struct { //nolint:maligned
 	Command       CommandOrShell
 
 	// Other values
-	alertCount   int16
-	failureCount int16
-	lastCheck    time.Time
-	lastSuccess  time.Time
-	lastOutput   string
+	alertCount        int16
+	failureCount      int16
+	lastCheck         time.Time
+	lastSuccess       time.Time
+	lastOutput        string
+	lastCheckDuration time.Duration
 }
 
 // IsValid returns a boolean indicating if the Monitor has been correctly
@@ -57,9 +58,11 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 		cmd = ShellCommand(monitor.Command.ShellCommand)
 	}
 
+	checkStartTime := time.Now()
 	output, err := cmd.CombinedOutput()
 	monitor.lastCheck = time.Now()
 	monitor.lastOutput = string(output)
+	monitor.lastCheckDuration = monitor.lastCheck.Sub(checkStartTime)
 
 	var alertNotice *AlertNotice
 
@@ -86,6 +89,11 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 // IsUp returns the status of the current monitor
 func (monitor Monitor) IsUp() bool {
 	return monitor.alertCount == 0
+}
+
+// LastCheckMilliseconds gives number of miliseconds the last check ran for
+func (monitor Monitor) LastCheckMilliseconds() int64 {
+	return monitor.lastCheckDuration.Milliseconds()
 }
 
 func (monitor *Monitor) success() (notice *AlertNotice) {

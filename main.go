@@ -74,7 +74,7 @@ func checkMonitors(config *Config) error {
 
 			// Track status metrics
 			Metrics.SetMonitorStatus(monitor.Name, monitor.IsUp())
-			Metrics.CountCheck(monitor.Name, success, hasAlert)
+			Metrics.CountCheck(monitor.Name, success, monitor.LastCheckMilliseconds(), hasAlert)
 
 			if alertNotice != nil {
 				return sendAlerts(config, monitor, alertNotice)
@@ -108,7 +108,7 @@ func main() {
 
 	// Serve metrics exporter, if specified
 	if ExportMetrics {
-		slog.Infof("Exporting metrics to Prometheus")
+		slog.Infof("Exporting metrics to Prometheus on port %d", MetricsPort)
 
 		go ServeMetrics()
 	}
