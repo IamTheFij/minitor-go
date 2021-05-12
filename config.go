@@ -13,7 +13,7 @@ var errInvalidConfig = errors.New("Invalid configuration")
 
 // Config type is contains all provided user configuration
 type Config struct {
-	CheckInterval time.Duration `yaml:"check_interval"`
+	CheckInterval SecondsOrDuration `yaml:"check_interval"`
 	Monitors      []*Monitor
 	Alerts        map[string]*Alert
 }
@@ -50,6 +50,34 @@ func (cos *CommandOrShell) UnmarshalYAML(unmarshal func(interface{}) error) erro
 	}
 
 	return nil
+}
+
+// SecondsOrDuration wraps a duration value for parsing a duration or seconds from YAML
+// NOTE: This should be removed in favor of only parsing durations once compatibility is broken
+type SecondsOrDuration struct {
+	value time.Duration
+}
+
+// Value returns a duration value
+func (sod SecondsOrDuration) Value() time.Duration {
+	return sod.value
+}
+
+// UnmarshalYAML allows unmarshalling a duration value or seconds if an int was provided
+func (sod *SecondsOrDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var seconds int64
+	err := unmarshal(&seconds)
+
+	if err == nil {
+		sod.value = time.Second * time.Duration(seconds)
+
+		return nil
+	}
+
+	// Error indicates that we don't have an int
+	err = unmarshal(&sod.value)
+
+	return err
 }
 
 // IsValid checks config validity and returns true if valid

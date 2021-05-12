@@ -45,9 +45,9 @@ func TestMonitorShouldCheck(t *testing.T) {
 		name     string
 	}{
 		{Monitor{}, true, "Empty"},
-		{Monitor{lastCheck: timeNow, CheckInterval: time.Second * 15}, false, "Just checked"},
-		{Monitor{lastCheck: timeTenSecAgo, CheckInterval: time.Second * 15}, false, "-10s"},
-		{Monitor{lastCheck: timeTwentySecAgo, CheckInterval: time.Second * 15}, true, "-20s"},
+		{Monitor{lastCheck: timeNow, CheckInterval: SecondsOrDuration{time.Second * 15}}, false, "Just checked"},
+		{Monitor{lastCheck: timeTenSecAgo, CheckInterval: SecondsOrDuration{time.Second * 15}}, false, "-10s"},
+		{Monitor{lastCheck: timeTwentySecAgo, CheckInterval: SecondsOrDuration{time.Second * 15}}, true, "-20s"},
 	}
 
 	for _, c := range cases {

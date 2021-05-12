@@ -52,15 +52,15 @@ func TestIntervalParsing(t *testing.T) {
 	oneMinute := time.Minute
 
 	// validate top level interval seconds represented as an int
-	if config.CheckInterval != oneSecond {
+	if config.CheckInterval.Value() != oneSecond {
 		t.Errorf("Incorrectly parsed int seconds. expected=%v actual=%v", oneSecond, config.CheckInterval)
 	}
 
-	if config.Monitors[0].CheckInterval != tenSeconds {
+	if config.Monitors[0].CheckInterval.Value() != tenSeconds {
 		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
 	}
 
-	if config.Monitors[1].CheckInterval != oneMinute {
+	if config.Monitors[1].CheckInterval.Value() != oneMinute {
 		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
 	}
 

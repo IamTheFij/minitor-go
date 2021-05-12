@@ -120,6 +120,6 @@ func main() {
 			panic(err)
 		}
 
-		time.Sleep(config.CheckInterval)
+		time.Sleep(config.CheckInterval.Value())
 	}
 }
