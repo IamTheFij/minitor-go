@@ -54,7 +54,7 @@ The global configurations are:
 
 |key|value|
 |---|---|
-|`check_interval`|Maximum frequency to run checks for each monitor (as duration, eg. 1m2s)|
+|`check_interval`|Maximum frequency to run checks for each monitor as duration, eg. 1m2s.|
 |`monitors`|List of all monitors. Detailed description below|
 |`alerts`|List of all alerts. Detailed description below|
 
@@ -141,6 +141,18 @@ minitor-go:
 alerts:
   log:
     command: 'echo {{.MonitorName}}'
+```
+
+Interval durations have changed from being an integer number of seconds to a duration string supported by Go, for example:
+
+minitor-py:
+```yaml
+check_interval: 90
+```
+
+minitor-go:
+```yaml
+check_interval: 1m30s
 ```
 
 For the time being, legacy configs for the Python version of Minitor should be compatible if you apply the `-py-compat` flag when running Minitor. Eventually, this flag will go away when later breaking changes are introduced.
