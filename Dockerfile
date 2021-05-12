@@ -1,15 +1,11 @@
 ARG REPO=library
-FROM multiarch/qemu-user-static:4.2.0-2 as qemu-user-static
-FROM ${REPO}/alpine:3.10
-
-# Copying all qemu files because amd64 doesn't exist and cannot condional copy
-COPY --from=qemu-user-static /usr/bin/qemu-* /usr/bin/
+FROM ${REPO}/alpine:3.13
 
 RUN mkdir /app
 WORKDIR /app/
 
 # Add common checking tools
-RUN apk --no-cache add bash=~5.0 curl=~7.66 jq=~1.6
+RUN apk --no-cache add bash=~5.1.0 curl=~7.76.1 jq=~1.6
 
 # Add minitor user for running as non-root
 RUN addgroup -S minitor && adduser -S minitor -G minitor
