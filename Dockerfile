@@ -1,11 +1,11 @@
 ARG REPO=library
-FROM ${REPO}/alpine:3.13
+FROM ${REPO}/alpine:3.12
 
 RUN mkdir /app
 WORKDIR /app/
 
 # Add common checking tools
-RUN apk --no-cache add bash=~5.1.0 curl=~7.76.1 jq=~1.6
+RUN apk --no-cache add bash=~5.0 curl=~7.76 jq=~1.6
 
 # Add minitor user for running as non-root
 RUN addgroup -S minitor && adduser -S minitor -G minitor
