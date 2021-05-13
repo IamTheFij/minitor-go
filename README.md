@@ -54,7 +54,7 @@ The global configurations are:
 
 |key|value|
 |---|---|
-|`check_interval`|Maximum frequency to run checks for each monitor|
+|`check_interval`|Maximum frequency to run checks for each monitor as duration, eg. 1m2s.|
 |`monitors`|List of all monitors. Detailed description below|
 |`alerts`|List of all alerts. Detailed description below|
 
@@ -111,7 +111,7 @@ minitor -metrics -metrics-port 3000
 
 ## Contributing
 
-Whether you're looking to submit a patch or just tell me I broke something, you can contribute through the Github mirror and I can merge PRs back to the source repository.
+Whether you're looking to submit a patch or tell me I broke something, you can contribute through the Github mirror and I can merge PRs back to the source repository.
 
 Primary Repo: https://git.iamthefij.com/iamthefij/minitor.git
 
@@ -143,6 +143,18 @@ alerts:
     command: 'echo {{.MonitorName}}'
 ```
 
+Interval durations have changed from being an integer number of seconds to a duration string supported by Go, for example:
+
+minitor-py:
+```yaml
+check_interval: 90
+```
+
+minitor-go:
+```yaml
+check_interval: 1m30s
+```
+
 For the time being, legacy configs for the Python version of Minitor should be compatible if you apply the `-py-compat` flag when running Minitor. Eventually, this flag will go away when later breaking changes are introduced.
 
 ## Future
@@ -153,4 +165,3 @@ Future, potentially breaking changes
   - [ ] Async checking
   - [ ] Revisit metrics and see if they all make sense
   - [ ] Consider dropping `alert_up` and `alert_down` in favor of using Go templates that offer more control of messaging (Breaking)
-  - [ ] Use durations rather than seconds checked in event loop (Potentially breaking)
