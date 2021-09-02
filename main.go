@@ -79,7 +79,11 @@ func checkMonitors(config *Config) error {
 			Metrics.CountCheck(monitor.Name, success, monitor.LastCheckMilliseconds(), hasAlert)
 
 			if alertNotice != nil {
-				return sendAlerts(config, monitor, alertNotice)
+				err := sendAlerts(config, monitor, alertNotice)
+				// If there was an error in sending an alert, exit early and bubble it up
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
