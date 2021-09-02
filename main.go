@@ -36,6 +36,8 @@ func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) erro
 			"Received alert, but no alert mechanisms exist. MonitorName=%s IsUp=%t",
 			alertNotice.MonitorName, alertNotice.IsUp,
 		)
+
+		return nil
 	}
 
 	for _, alertName := range alertNames {
@@ -66,10 +68,10 @@ func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) erro
 }
 
 func checkMonitors(config *Config) error {
+	// TODO: Run this in goroutines and capture exceptions
 	for _, monitor := range config.Monitors {
 		if monitor.ShouldCheck() {
 			success, alertNotice := monitor.Check()
-
 			hasAlert := alertNotice != nil
 
 			// Track status metrics
@@ -92,7 +94,7 @@ func main() {
 	flag.BoolVar(&slog.DebugLevel, "debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
 	flag.BoolVar(&PyCompat, "py-compat", false, "Enables support for legacy Python Minitor config. Will eventually be removed. (default: false)")
-	flag.IntVar(&MetricsPort, "metrics-port", 8080, "The port that Prometheus metrics should be exported on, if enabled. (default: 8080)")
+	flag.IntVar(&MetricsPort, "metrics-port", MetricsPort, "The port that Prometheus metrics should be exported on, if enabled. (default: 8080)")
 	flag.Parse()
 
 	// Print version if flag is provided
@@ -116,9 +118,7 @@ func main() {
 	// Start main loop
 	for {
 		err = checkMonitors(&config)
-		if err != nil {
-			panic(err)
-		}
+		slog.OnErrPanicf(err, "Error checking monitors")
 
 		time.Sleep(config.CheckInterval.Value())
 	}
