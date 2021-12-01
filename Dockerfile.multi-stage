@@ -1,7 +1,5 @@
 ARG REPO=library
-FROM golang:1.12-alpine AS builder
-
-RUN apk add --no-cache git=~2
+FROM golang:1.17 AS builder
 
 RUN mkdir /app
 WORKDIR /app
