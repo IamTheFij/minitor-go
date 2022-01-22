@@ -1,9 +1,9 @@
 ARG REPO=library
 FROM golang:1.12-alpine AS builder
 
-RUN apk add --no-cache git=~2
+RUN apk add --no-cache git=~2 \
+    && mkdir /app
 
-RUN mkdir /app
 WORKDIR /app
 
 COPY ./go.mod ./go.sum /app/

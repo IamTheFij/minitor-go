@@ -92,7 +92,7 @@ func main() {
 	flag.BoolVar(&slog.DebugLevel, "debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
 	flag.BoolVar(&PyCompat, "py-compat", false, "Enables support for legacy Python Minitor config. Will eventually be removed. (default: false)")
-	flag.IntVar(&MetricsPort, "metrics-port", 8080, "The port that Prometheus metrics should be exported on, if enabled. (default: 8080)")
+	flag.IntVar(&MetricsPort, "metrics-port", MetricsPort, "The port that Prometheus metrics should be exported on, if enabled. (default: 8080)")
 	flag.Parse()
 
 	// Print version if flag is provided
