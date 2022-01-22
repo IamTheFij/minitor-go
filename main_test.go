@@ -16,7 +16,7 @@ func TestCheckMonitors(t *testing.T) {
 		{
 			config: Config{
 				Monitors: []*Monitor{
-					&Monitor{
+					{
 						Name:    "Success",
 						Command: CommandOrShell{Command: []string{"true"}},
 					},
@@ -28,7 +28,7 @@ func TestCheckMonitors(t *testing.T) {
 		{
 			config: Config{
 				Monitors: []*Monitor{
-					&Monitor{
+					{
 						Name:       "Failure",
 						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertAfter: 1,
@@ -41,7 +41,7 @@ func TestCheckMonitors(t *testing.T) {
 		{
 			config: Config{
 				Monitors: []*Monitor{
-					&Monitor{
+					{
 						Name:       "Success",
 						Command:    CommandOrShell{Command: []string{"ls"}},
 						alertCount: 1,
@@ -54,7 +54,7 @@ func TestCheckMonitors(t *testing.T) {
 		{
 			config: Config{
 				Monitors: []*Monitor{
-					&Monitor{
+					{
 						Name:       "Failure",
 						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertDown:  []string{"unknown"},
@@ -68,7 +68,7 @@ func TestCheckMonitors(t *testing.T) {
 		{
 			config: Config{
 				Monitors: []*Monitor{
-					&Monitor{
+					{
 						Name:       "Success",
 						Command:    CommandOrShell{Command: []string{"true"}},
 						AlertUp:    []string{"unknown"},
@@ -82,7 +82,7 @@ func TestCheckMonitors(t *testing.T) {
 		{
 			config: Config{
 				Monitors: []*Monitor{
-					&Monitor{
+					{
 						Name:       "Failure",
 						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertDown:  []string{"good"},
@@ -90,7 +90,7 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 				Alerts: map[string]*Alert{
-					"good": &Alert{
+					"good": {
 						Command: CommandOrShell{Command: []string{"true"}},
 					},
 				},
@@ -101,7 +101,7 @@ func TestCheckMonitors(t *testing.T) {
 		{
 			config: Config{
 				Monitors: []*Monitor{
-					&Monitor{
+					{
 						Name:       "Failure",
 						Command:    CommandOrShell{Command: []string{"false"}},
 						AlertDown:  []string{"bad"},
@@ -109,7 +109,7 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 				Alerts: map[string]*Alert{
-					"bad": &Alert{
+					"bad": {
 						Name:    "bad",
 						Command: CommandOrShell{Command: []string{"false"}},
 					},
