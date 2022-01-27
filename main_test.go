@@ -2,6 +2,10 @@ package main
 
 import "testing"
 
+func Ptr[T any](v T) *T {
+	return &v
+}
+
 func TestCheckMonitors(t *testing.T) {
 	cases := []struct {
 		config    Config
@@ -9,16 +13,12 @@ func TestCheckMonitors(t *testing.T) {
 		name      string
 	}{
 		{
-			config:    Config{},
-			expectErr: false,
-			name:      "Empty",
-		},
-		{
 			config: Config{
+				CheckIntervalStr: "1s",
 				Monitors: []*Monitor{
 					{
 						Name:    "Success",
-						Command: CommandOrShell{Command: []string{"true"}},
+						Command: []string{"true"},
 					},
 				},
 			},
@@ -27,23 +27,25 @@ func TestCheckMonitors(t *testing.T) {
 		},
 		{
 			config: Config{
+				CheckIntervalStr: "1s",
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
-						AlertAfter: 1,
+						Command:    []string{"false"},
+						AlertAfter: Ptr(1),
 					},
 				},
 			},
-			expectErr: false,
+			expectErr: true,
 			name:      "Monitor failure, no alerts",
 		},
 		{
 			config: Config{
+				CheckIntervalStr: "1s",
 				Monitors: []*Monitor{
 					{
 						Name:       "Success",
-						Command:    CommandOrShell{Command: []string{"ls"}},
+						Command:    []string{"ls"},
 						alertCount: 1,
 					},
 				},
@@ -53,12 +55,13 @@ func TestCheckMonitors(t *testing.T) {
 		},
 		{
 			config: Config{
+				CheckIntervalStr: "1s",
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
+						Command:    []string{"false"},
 						AlertDown:  []string{"unknown"},
-						AlertAfter: 1,
+						AlertAfter: Ptr(1),
 					},
 				},
 			},
@@ -67,10 +70,11 @@ func TestCheckMonitors(t *testing.T) {
 		},
 		{
 			config: Config{
+				CheckIntervalStr: "1s",
 				Monitors: []*Monitor{
 					{
 						Name:       "Success",
-						Command:    CommandOrShell{Command: []string{"true"}},
+						Command:    []string{"true"},
 						AlertUp:    []string{"unknown"},
 						alertCount: 1,
 					},
@@ -81,39 +85,38 @@ func TestCheckMonitors(t *testing.T) {
 		},
 		{
 			config: Config{
+				CheckIntervalStr: "1s",
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
+						Command:    []string{"false"},
 						AlertDown:  []string{"good"},
-						AlertAfter: 1,
+						AlertAfter: Ptr(1),
 					},
 				},
-				Alerts: map[string]*Alert{
-					"good": {
-						Command: CommandOrShell{Command: []string{"true"}},
-					},
-				},
+				Alerts: []*Alert{{
+					Name:    "good",
+					Command: []string{"true"},
+				}},
 			},
 			expectErr: false,
 			name:      "Monitor failure, successful alert",
 		},
 		{
 			config: Config{
+				CheckIntervalStr: "1s",
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
+						Command:    []string{"false"},
 						AlertDown:  []string{"bad"},
-						AlertAfter: 1,
+						AlertAfter: Ptr(1),
 					},
 				},
-				Alerts: map[string]*Alert{
-					"bad": {
-						Name:    "bad",
-						Command: CommandOrShell{Command: []string{"false"}},
-					},
-				},
+				Alerts: []*Alert{{
+					Name:    "bad",
+					Command: []string{"false"},
+				}},
 			},
 			expectErr: true,
 			name:      "Monitor failure, bad alert",
@@ -162,9 +165,10 @@ func TestFirstRunAlerts(t *testing.T) {
 		},
 		{
 			config: Config{
-				Alerts: map[string]*Alert{
-					"good": {
-						Command: CommandOrShell{Command: []string{"true"}},
+				Alerts: []*Alert{
+					{
+						Name:    "good",
+						Command: []string{"true"},
 					},
 				},
 			},
@@ -174,10 +178,10 @@ func TestFirstRunAlerts(t *testing.T) {
 		},
 		{
 			config: Config{
-				Alerts: map[string]*Alert{
-					"bad": {
+				Alerts: []*Alert{
+					{
 						Name:    "bad",
-						Command: CommandOrShell{Command: []string{"false"}},
+						Command: []string{"false"},
 					},
 				},
 			},

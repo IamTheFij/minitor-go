@@ -20,16 +20,17 @@ var (
 
 // Alert is a config driven mechanism for sending a notice
 type Alert struct {
-	Name                 string
-	Command              CommandOrShell
+	Name                 string   `hcl:"name,label"`
+	Command              []string `hcl:"command,optional"`
+	ShellCommand         string   `hcl:"shell_command,optional"`
 	commandTemplate      []*template.Template
 	commandShellTemplate *template.Template
 }
 
 // AlertNotice captures the context for an alert to be sent
 type AlertNotice struct {
-	AlertCount      int16
-	FailureCount    int16
+	AlertCount      int
+	FailureCount    int
 	IsUp            bool
 	LastSuccess     time.Time
 	MonitorName     string
@@ -39,7 +40,10 @@ type AlertNotice struct {
 // IsValid returns a boolean indicating if the Alert has been correctly
 // configured
 func (alert Alert) IsValid() bool {
-	return !alert.Command.Empty()
+	hasAtLeastOneCommand := alert.Command != nil || alert.ShellCommand != ""
+	hasAtMostOneCommand := alert.Command == nil || alert.ShellCommand == ""
+
+	return hasAtLeastOneCommand && hasAtMostOneCommand
 }
 
 // BuildTemplates compiles command templates for the Alert
@@ -78,15 +82,15 @@ func (alert *Alert) BuildTemplates() error {
 	}
 
 	switch {
-	case alert.commandTemplate == nil && alert.Command.Command != nil:
+	case alert.commandTemplate == nil && alert.Command != nil:
 		alert.commandTemplate = []*template.Template{}
-		for i, cmdPart := range alert.Command.Command {
+		for i, cmdPart := range alert.Command {
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+fmt.Sprint(i)).Funcs(timeFormatFuncs).Parse(cmdPart),
 			))
 		}
-	case alert.commandShellTemplate == nil && alert.Command.ShellCommand != "":
-		shellCmd := alert.Command.ShellCommand
+	case alert.commandShellTemplate == nil && alert.ShellCommand != "":
+		shellCmd := alert.ShellCommand
 
 		alert.commandShellTemplate = template.Must(
 			template.New(alert.Name).Funcs(timeFormatFuncs).Parse(shellCmd),
@@ -163,11 +167,9 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 func NewLogAlert() *Alert {
 	return &Alert{
 		Name: "log",
-		Command: CommandOrShell{
-			Command: []string{
-				"echo",
-				"{{.MonitorName}} {{if .IsUp}}has recovered{{else}}check has failed {{.FailureCount}} times{{end}}",
-			},
+		Command: []string{
+			"echo",
+			"{{.MonitorName}} {{if .IsUp}}has recovered{{else}}check has failed {{.FailureCount}} times{{end}}",
 		},
 	}
 }

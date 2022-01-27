@@ -11,17 +11,20 @@ import (
 // Monitor represents a particular periodic check of a command
 type Monitor struct { //nolint:maligned
 	// Config values
-	AlertAfter    int16         `yaml:"alert_after"`
-	AlertEvery    *int16        `yaml:"alert_every"`
-	CheckInterval time.Duration `yaml:"check_interval"`
-	Name          string
-	AlertDown     []string `yaml:"alert_down"`
-	AlertUp       []string `yaml:"alert_up"`
-	Command       CommandOrShell
+	CheckIntervalStr *string `hcl:"check_interval,optional"`
+	CheckInterval    time.Duration
+
+	Name         string   `hcl:"name,label"`
+	AlertAfter   *int     `hcl:"alert_after,optional"`
+	AlertEvery   *int     `hcl:"alert_every,optional"`
+	AlertDown    []string `hcl:"alert_down,optional"`
+	AlertUp      []string `hcl:"alert_up,optional"`
+	Command      []string `hcl:"command,optional"`
+	ShellCommand string   `hcl:"shell_command,optional"`
 
 	// Other values
-	alertCount        int16
-	failureCount      int16
+	alertCount        int
+	failureCount      int
 	lastCheck         time.Time
 	lastSuccess       time.Time
 	lastOutput        string
@@ -31,15 +34,24 @@ type Monitor struct { //nolint:maligned
 // IsValid returns a boolean indicating if the Monitor has been correctly
 // configured
 func (monitor Monitor) IsValid() bool {
-	return (!monitor.Command.Empty() &&
-		monitor.getAlertAfter() > 0 &&
-		monitor.AlertDown != nil)
+	hasCommand := len(monitor.Command) > 0
+	hasShellCommand := monitor.ShellCommand != ""
+	hasValidAlertAfter := monitor.GetAlertAfter() > 0
+	hasAlertDown := len(monitor.AlertDown) > 0
+
+	hasAtLeastOneCommand := hasCommand || hasShellCommand
+	hasAtMostOneCommand := !(hasCommand && hasShellCommand)
+
+	return hasAtLeastOneCommand &&
+		hasAtMostOneCommand &&
+		hasValidAlertAfter &&
+		hasAlertDown
 }
 
 // ShouldCheck returns a boolean indicating if the Monitor is ready to be
 // be checked again
 func (monitor Monitor) ShouldCheck() bool {
-	if monitor.lastCheck.IsZero() {
+	if monitor.lastCheck.IsZero() || monitor.CheckInterval == 0 {
 		return true
 	}
 
@@ -52,10 +64,12 @@ func (monitor Monitor) ShouldCheck() bool {
 // and a possible AlertNotice
 func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	var cmd *exec.Cmd
-	if monitor.Command.Command != nil {
-		cmd = exec.Command(monitor.Command.Command[0], monitor.Command.Command[1:]...)
+	if len(monitor.Command) > 0 {
+		cmd = exec.Command(monitor.Command[0], monitor.Command[1:]...)
+	} else if monitor.ShellCommand != "" {
+		cmd = ShellCommand(monitor.ShellCommand)
 	} else {
-		cmd = ShellCommand(monitor.Command.ShellCommand)
+		slog.Fatalf("Monitor %s has no command configured", monitor.Name)
 	}
 
 	checkStartTime := time.Now()
@@ -112,20 +126,20 @@ func (monitor *Monitor) success() (notice *AlertNotice) {
 func (monitor *Monitor) failure() (notice *AlertNotice) {
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
-	if monitor.failureCount < monitor.getAlertAfter() {
+	if monitor.failureCount < monitor.GetAlertAfter() {
 		slog.Debugf(
 			"%s failed but did not hit minimum failures. "+
 				"Count: %v alert after: %v",
 			monitor.Name,
 			monitor.failureCount,
-			monitor.getAlertAfter(),
+			monitor.GetAlertAfter(),
 		)
 
 		return
 	}
 
 	// Take number of failures after minimum
-	failureCount := (monitor.failureCount - monitor.getAlertAfter())
+	failureCount := (monitor.failureCount - monitor.GetAlertAfter())
 
 	// Use alert cadence to determine if we should alert
 	switch {
@@ -141,7 +155,7 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 		}
 	default:
 		// Handle negative numbers indicating an exponential backoff
-		if failureCount >= int16(math.Pow(2, float64(monitor.alertCount))-1) { //nolint:gomnd
+		if failureCount >= int(math.Pow(2, float64(monitor.alertCount))-1) { //nolint:gomnd
 			notice = monitor.createAlertNotice(false)
 		}
 	}
@@ -154,14 +168,13 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	return notice
 }
 
-func (monitor Monitor) getAlertAfter() int16 {
-	// TODO: Come up with a better way than this method
-	// Zero is one!
-	if monitor.AlertAfter == 0 {
+// GetAlertAfter will get or return the default alert after value
+func (monitor Monitor) GetAlertAfter() int {
+	if monitor.AlertAfter == nil {
 		return 1
 	}
 
-	return monitor.AlertAfter
+	return *monitor.AlertAfter
 }
 
 // GetAlertNames gives a list of alert names for a given monitor status

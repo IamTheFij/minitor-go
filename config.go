@@ -2,58 +2,56 @@ package main
 
 import (
 	"errors"
-	"os"
+	"fmt"
 	"time"
 
 	"git.iamthefij.com/iamthefij/slog"
-	"gopkg.in/yaml.v2"
+	/*
+	 * "github.com/hashicorp/hcl/v2"
+	 * "github.com/hashicorp/hcl/v2/gohcl"
+	 */
+	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
 var errInvalidConfig = errors.New("Invalid configuration")
 
 // Config type is contains all provided user configuration
 type Config struct {
-	CheckInterval     time.Duration `yaml:"check_interval"`
-	DefaultAlertAfter int16         `yaml:"default_alert_after"`
-	DefaultAlertEvery *int16        `yaml:"default_alert_every"`
-	DefaultAlertDown  []string      `yaml:"default_alert_down"`
-	DefaultAlertUp    []string      `yaml:"default_alert_up"`
-	Monitors          []*Monitor
-	Alerts            map[string]*Alert
+	CheckIntervalStr string `hcl:"check_interval"`
+	CheckInterval    time.Duration
+
+	DefaultAlertAfter *int       `hcl:"default_alert_after,optional"`
+	DefaultAlertEvery *int       `hcl:"default_alert_every,optional"`
+	DefaultAlertDown  []string   `hcl:"default_alert_down,optional"`
+	DefaultAlertUp    []string   `hcl:"default_alert_up,optional"`
+	Monitors          []*Monitor `hcl:"monitor,block"`
+	Alerts            []*Alert   `hcl:"alert,block"`
+
+	alertLookup map[string]*Alert
 }
 
-// CommandOrShell type wraps a string or list of strings
-// for executing a command directly or in a shell
-type CommandOrShell struct {
-	ShellCommand string
-	Command      []string
-}
-
-// Empty checks if the Command has a value
-func (cos CommandOrShell) Empty() bool {
-	return (cos.ShellCommand == "" && cos.Command == nil)
-}
-
-// UnmarshalYAML allows unmarshalling either a string or slice of strings
-// and parsing them as either a command or a shell command.
-func (cos *CommandOrShell) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var cmd []string
-	err := unmarshal(&cmd)
-	// Error indicates this is shell command
-	if err != nil {
-		var shellCmd string
-
-		err := unmarshal(&shellCmd)
-		if err != nil {
-			return err
+func (c Config) GetAlert(name string) (*Alert, bool) {
+	if c.alertLookup == nil {
+		c.alertLookup = map[string]*Alert{}
+		for _, alert := range c.Alerts {
+			c.alertLookup[alert.Name] = alert
 		}
-
-		cos.ShellCommand = shellCmd
-	} else {
-		cos.Command = cmd
 	}
 
-	return nil
+	v, ok := c.alertLookup[name]
+
+	return v, ok
+}
+
+// BuildAllTemplates builds all alert templates
+func (c *Config) BuildAllTemplates() (err error) {
+	for _, alert := range c.Alerts {
+		if err = alert.BuildTemplates(); err != nil {
+			return
+		}
+	}
+
+	return
 }
 
 // IsValid checks config validity and returns true if valid
@@ -61,7 +59,7 @@ func (config Config) IsValid() (isValid bool) {
 	isValid = true
 
 	// Validate alerts
-	if config.Alerts == nil || len(config.Alerts) == 0 {
+	if len(config.Alerts) == 0 {
 		// This should never happen because there is a default alert named 'log' for now
 		slog.Errorf("Invalid alert configuration: Must provide at least one alert")
 
@@ -73,13 +71,11 @@ func (config Config) IsValid() (isValid bool) {
 			slog.Errorf("Invalid alert configuration: %+v", alert.Name)
 
 			isValid = false
-		} else {
-			slog.Debugf("Loaded alert %s", alert.Name)
 		}
 	}
 
 	// Validate monitors
-	if config.Monitors == nil || len(config.Monitors) == 0 {
+	if len(config.Monitors) == 0 {
 		slog.Errorf("Invalid monitor configuration: Must provide at least one monitor")
 
 		isValid = false
@@ -94,7 +90,7 @@ func (config Config) IsValid() (isValid bool) {
 		// Check that all Monitor alerts actually exist
 		for _, isUp := range []bool{true, false} {
 			for _, alertName := range monitor.GetAlertNames(isUp) {
-				if _, ok := config.Alerts[alertName]; !ok {
+				if _, ok := config.GetAlert(alertName); !ok {
 					slog.Errorf(
 						"Invalid monitor configuration: %s. Unknown alert %s",
 						monitor.Name, alertName,
@@ -111,43 +107,46 @@ func (config Config) IsValid() (isValid bool) {
 
 // Init performs extra initialization on top of loading the config from file
 func (config *Config) Init() (err error) {
+	config.CheckInterval, err = time.ParseDuration(config.CheckIntervalStr)
+	if err != nil {
+		return fmt.Errorf("failed to parse top level check_interval duration: %w", err)
+	}
+
 	for _, monitor := range config.Monitors {
-		if monitor.AlertAfter == 0 && config.DefaultAlertAfter > 0 {
+		// Parse the check_interval string into a time.Duration
+		if monitor.CheckIntervalStr != nil {
+			monitor.CheckInterval, err = time.ParseDuration(*monitor.CheckIntervalStr)
+			if err != nil {
+				return fmt.Errorf("failed to parse check_interval duration for monitor %s: %w", monitor.Name, err)
+			}
+		}
+
+		// Set default values for monitor alerts
+		if monitor.AlertAfter == nil {
 			monitor.AlertAfter = config.DefaultAlertAfter
 		}
 
-		if monitor.AlertEvery == nil && config.DefaultAlertEvery != nil {
+		if monitor.AlertEvery == nil {
 			monitor.AlertEvery = config.DefaultAlertEvery
 		}
 
-		if len(monitor.AlertDown) == 0 && len(config.DefaultAlertDown) > 0 {
+		if monitor.AlertDown == nil {
 			monitor.AlertDown = config.DefaultAlertDown
 		}
 
-		if len(monitor.AlertUp) == 0 && len(config.DefaultAlertUp) > 0 {
+		if monitor.AlertUp == nil {
 			monitor.AlertUp = config.DefaultAlertUp
 		}
 	}
 
-	for name, alert := range config.Alerts {
-		alert.Name = name
-
-		if err = alert.BuildTemplates(); err != nil {
-			return
-		}
-	}
+	err = config.BuildAllTemplates()
 
 	return
 }
 
 // LoadConfig will read config from the given path and parse it
 func LoadConfig(filePath string) (config Config, err error) {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return
-	}
-
-	err = yaml.Unmarshal(data, &config)
+	err = hclsimple.DecodeFile(filePath, nil, &config)
 	if err != nil {
 		return
 	}

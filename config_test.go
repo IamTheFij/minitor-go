@@ -2,7 +2,6 @@ package main
 
 import (
 	"testing"
-	"time"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -10,17 +9,15 @@ func TestLoadConfig(t *testing.T) {
 		configPath string
 		expectErr  bool
 		name       string
-		pyCompat   bool
 	}{
-		{"./test/valid-config.yml", false, "Valid config file", false},
-		{"./test/valid-config-default-values.yml", false, "Valid config file with default values", false},
-		{"./test/valid-default-log-alert.yml", true, "Invalid config file no log alert", false},
-		{"./test/does-not-exist", true, "Invalid config path", false},
-		{"./test/invalid-config-type.yml", true, "Invalid config type for key", false},
-		{"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts", false},
-		{"./test/invalid-config-unknown-alert.yml", true, "Invalid config unknown alert", false},
+		{"./test/does-not-exist", true, "Invalid config path"},
+		// {"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts"},
+		// {"./test/invalid-config-type.yml", true, "Invalid config type for key"},
+		// {"./test/invalid-config-unknown-alert.yml", true, "Invalid config unknown alert"},
+		// {"./test/valid-config-default-values.yml", false, "Valid config file with default values"},
+		{"./test/valid-config.hcl", false, "Valid config file"},
+		// {"./test/valid-default-log-alert.yml", true, "Invalid config file no log alert"},
 	}
-
 	for _, c := range cases {
 		c := c
 
@@ -37,44 +34,18 @@ func TestLoadConfig(t *testing.T) {
 	}
 }
 
-func TestIntervalParsing(t *testing.T) {
-	t.Parallel()
-
-	config, err := LoadConfig("./test/valid-config.yml")
-	if err != nil {
-		t.Errorf("Failed loading config: %v", err)
-	}
-
-	oneSecond := time.Second
-	tenSeconds := 10 * time.Second
-	oneMinute := time.Minute
-
-	// validate top level interval seconds represented as an int
-	if config.CheckInterval != oneSecond {
-		t.Errorf("Incorrectly parsed int seconds. expected=%v actual=%v", oneSecond, config.CheckInterval)
-	}
-
-	if config.Monitors[0].CheckInterval != tenSeconds {
-		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
-	}
-
-	if config.Monitors[1].CheckInterval != oneMinute {
-		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
-	}
-}
-
 // TestMultiLineConfig is a more complicated test stepping through the parsing
 // and execution of mutli-line strings presented in YAML
 func TestMultiLineConfig(t *testing.T) {
 	t.Parallel()
 
-	config, err := LoadConfig("./test/valid-verify-multi-line.yml")
+	config, err := LoadConfig("./test/valid-verify-multi-line.hcl")
 	if err != nil {
 		t.Fatalf("TestMultiLineConfig(load), expected=no_error actual=%v", err)
 	}
 
-	expected := "echo 'Some string with stuff'; echo \"<angle brackets>\"; exit 1\n"
-	actual := config.Monitors[0].Command.ShellCommand
+	expected := "echo 'Some string with stuff';\necho \"<angle brackets>\";\nexit 1\n"
+	actual := config.Monitors[0].ShellCommand
 
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(>) failed")
@@ -86,7 +57,7 @@ func TestMultiLineConfig(t *testing.T) {
 
 	_, notice := config.Monitors[0].Check()
 	if notice == nil {
-		t.Fatalf("Did not receive an alert notice")
+		t.Fatal("Did not receive an alert notice")
 	}
 
 	expected = "Some string with stuff\n<angle brackets>\n"
@@ -101,8 +72,13 @@ func TestMultiLineConfig(t *testing.T) {
 	}
 
 	expected = "echo 'Some string with stuff'\necho '<angle brackets>'\n"
-	actual = config.Alerts["log_shell"].Command.ShellCommand
 
+	alert, ok := config.GetAlert("log_shell")
+	if !ok {
+		t.Fatal("Could not find expected alert 'log_shell'")
+	}
+
+	actual = alert.ShellCommand
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(|) failed")
 		t.Logf("string expected=`%v`", expected)
@@ -111,7 +87,7 @@ func TestMultiLineConfig(t *testing.T) {
 		t.Logf("bytes actual  =%v", []byte(actual))
 	}
 
-	actual, err = config.Alerts["log_shell"].Send(AlertNotice{})
+	actual, err = alert.Send(AlertNotice{})
 	if err != nil {
 		t.Errorf("Execution of alert failed")
 	}

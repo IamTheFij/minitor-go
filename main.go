@@ -39,7 +39,7 @@ func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) erro
 	}
 
 	for _, alertName := range alertNames {
-		if alert, ok := config.Alerts[alertName]; ok {
+		if alert, ok := config.GetAlert(alertName); ok {
 			output, err := alert.Send(*alertNotice)
 			if err != nil {
 				slog.Errorf(
@@ -93,7 +93,7 @@ func sendStartupAlerts(config *Config, alertNames []string) error {
 	for _, alertName := range alertNames {
 		var err error
 
-		alert, ok := config.Alerts[alertName]
+		alert, ok := config.GetAlert(alertName)
 		if !ok {
 			err = fmt.Errorf("unknown alert %s: %w", alertName, errUnknownAlert)
 		}
