@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
-	"strings"
 	"text/template"
 	"time"
 
@@ -21,8 +20,9 @@ var (
 
 // Alert is a config driven mechanism for sending a notice
 type Alert struct {
-	Name                 string
-	Command              CommandOrShell
+	Name                 string `hcl:"name,label"`
+	Command              []string
+	ShellCommand         string `hcl:"shell_command"`
 	commandTemplate      []*template.Template
 	commandShellTemplate *template.Template
 }
@@ -40,41 +40,24 @@ type AlertNotice struct {
 // IsValid returns a boolean indicating if the Alert has been correctly
 // configured
 func (alert Alert) IsValid() bool {
-	return !alert.Command.Empty()
+	return ((alert.Command != nil || alert.ShellCommand != "") &&
+		!(alert.Command != nil && alert.ShellCommand != ""))
 }
 
 // BuildTemplates compiles command templates for the Alert
 func (alert *Alert) BuildTemplates() error {
-	// TODO: Remove legacy template support later after 1.0
-	legacy := strings.NewReplacer(
-		"{alert_count}", "{{.AlertCount}}",
-		"{alert_message}", "{{.MonitorName}} check has failed {{.FailureCount}} times",
-		"{failure_count}", "{{.FailureCount}}",
-		"{last_output}", "{{.LastCheckOutput}}",
-		"{last_success}", "{{.LastSuccess}}",
-		"{monitor_name}", "{{.MonitorName}}",
-	)
-
 	slog.Debugf("Building template for alert %s", alert.Name)
 
 	switch {
-	case alert.commandTemplate == nil && alert.Command.Command != nil:
+	case alert.commandTemplate == nil && alert.Command != nil:
 		alert.commandTemplate = []*template.Template{}
-		for i, cmdPart := range alert.Command.Command {
-			if PyCompat {
-				cmdPart = legacy.Replace(cmdPart)
-			}
-
+		for i, cmdPart := range alert.Command {
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+fmt.Sprint(i)).Parse(cmdPart),
 			))
 		}
-	case alert.commandShellTemplate == nil && alert.Command.ShellCommand != "":
-		shellCmd := alert.Command.ShellCommand
-
-		if PyCompat {
-			shellCmd = legacy.Replace(shellCmd)
-		}
+	case alert.commandShellTemplate == nil && alert.ShellCommand != "":
+		shellCmd := alert.ShellCommand
 
 		alert.commandShellTemplate = template.Must(
 			template.New(alert.Name).Parse(shellCmd),
@@ -151,11 +134,9 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 func NewLogAlert() *Alert {
 	return &Alert{
 		Name: "log",
-		Command: CommandOrShell{
-			Command: []string{
-				"echo",
-				"{{.MonitorName}} {{if .IsUp}}has recovered{{else}}check has failed {{.FailureCount}} times{{end}}",
-			},
+		Command: []string{
+			"echo",
+			"{{.MonitorName}} {{if .IsUp}}has recovered{{else}}check has failed {{.FailureCount}} times{{end}}",
 		},
 	}
 }

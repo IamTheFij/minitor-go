@@ -11,13 +11,14 @@ import (
 // Monitor represents a particular periodic check of a command
 type Monitor struct { //nolint:maligned
 	// Config values
-	AlertAfter    int16             `yaml:"alert_after"`
-	AlertEvery    int16             `yaml:"alert_every"`
-	CheckInterval SecondsOrDuration `yaml:"check_interval"`
-	Name          string
-	AlertDown     []string `yaml:"alert_down"`
-	AlertUp       []string `yaml:"alert_up"`
-	Command       CommandOrShell
+	AlertAfter    int16         `hcl:"alert_after"`
+	AlertEvery    int16         `hcl:"alert_every"`
+	CheckInterval time.Duration `hcl:"check_interval"`
+	Name          string        `hcl:"name,label"`
+	AlertDown     []string      `hcl:"alert_down"`
+	AlertUp       []string      `hcl:"alert_up"`
+	Command       []string
+	ShellCommand  string `hcl:"shell_command"`
 
 	// Other values
 	alertCount        int16
@@ -31,7 +32,8 @@ type Monitor struct { //nolint:maligned
 // IsValid returns a boolean indicating if the Monitor has been correctly
 // configured
 func (monitor Monitor) IsValid() bool {
-	return (!monitor.Command.Empty() &&
+	return ((monitor.Command != nil || monitor.ShellCommand != "") &&
+		!(monitor.Command != nil && monitor.ShellCommand != "") &&
 		monitor.getAlertAfter() > 0 &&
 		monitor.AlertDown != nil)
 }
@@ -45,17 +47,17 @@ func (monitor Monitor) ShouldCheck() bool {
 
 	sinceLastCheck := time.Since(monitor.lastCheck)
 
-	return sinceLastCheck >= monitor.CheckInterval.Value()
+	return sinceLastCheck >= monitor.CheckInterval
 }
 
 // Check will run the command configured by the Monitor and return a status
 // and a possible AlertNotice
 func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	var cmd *exec.Cmd
-	if monitor.Command.Command != nil {
-		cmd = exec.Command(monitor.Command.Command[0], monitor.Command.Command[1:]...)
+	if monitor.Command != nil {
+		cmd = exec.Command(monitor.Command[0], monitor.Command[1:]...)
 	} else {
-		cmd = ShellCommand(monitor.Command.ShellCommand)
+		cmd = ShellCommand(monitor.ShellCommand)
 	}
 
 	checkStartTime := time.Now()

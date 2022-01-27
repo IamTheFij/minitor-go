@@ -17,9 +17,6 @@ var (
 	// Metrics contains all active metrics
 	Metrics = NewMetrics()
 
-	// PyCompat enables support for legacy Python templates
-	PyCompat = false
-
 	// version of minitor being run
 	version = "dev"
 
@@ -39,7 +36,7 @@ func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) erro
 	}
 
 	for _, alertName := range alertNames {
-		if alert, ok := config.Alerts[alertName]; ok {
+		if alert, ok := config.Alerts.Get(alertName); ok {
 			output, err := alert.Send(*alertNotice)
 			if err != nil {
 				slog.Errorf(
@@ -91,7 +88,6 @@ func main() {
 
 	flag.BoolVar(&slog.DebugLevel, "debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
-	flag.BoolVar(&PyCompat, "py-compat", false, "Enables support for legacy Python Minitor config. Will eventually be removed. (default: false)")
 	flag.IntVar(&MetricsPort, "metrics-port", MetricsPort, "The port that Prometheus metrics should be exported on, if enabled. (default: 8080)")
 	flag.Parse()
 
@@ -120,6 +116,6 @@ func main() {
 			panic(err)
 		}
 
-		time.Sleep(config.CheckInterval.Value())
+		time.Sleep(config.CheckInterval)
 	}
 }

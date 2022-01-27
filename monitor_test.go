@@ -13,11 +13,11 @@ func TestMonitorIsValid(t *testing.T) {
 		expected bool
 		name     string
 	}{
-		{Monitor{Command: CommandOrShell{Command: []string{"echo", "test"}}, AlertDown: []string{"log"}}, true, "Command only"},
-		{Monitor{Command: CommandOrShell{ShellCommand: "echo test"}, AlertDown: []string{"log"}}, true, "CommandShell only"},
-		{Monitor{Command: CommandOrShell{Command: []string{"echo", "test"}}}, false, "No AlertDown"},
+		{Monitor{Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, true, "Command only"},
+		{Monitor{ShellCommand: "echo test", AlertDown: []string{"log"}}, true, "CommandShell only"},
+		{Monitor{Command: []string{"echo", "test"}}, false, "No AlertDown"},
 		{Monitor{AlertDown: []string{"log"}}, false, "No commands"},
-		{Monitor{Command: CommandOrShell{Command: []string{"echo", "test"}}, AlertDown: []string{"log"}, AlertAfter: -1}, false, "Invalid alert threshold, -1"},
+		{Monitor{Command: []string{"echo", "test"}, AlertDown: []string{"log"}, AlertAfter: -1}, false, "Invalid alert threshold, -1"},
 	}
 
 	for _, c := range cases {
@@ -45,9 +45,9 @@ func TestMonitorShouldCheck(t *testing.T) {
 		name     string
 	}{
 		{Monitor{}, true, "Empty"},
-		{Monitor{lastCheck: timeNow, CheckInterval: SecondsOrDuration{time.Second * 15}}, false, "Just checked"},
-		{Monitor{lastCheck: timeTenSecAgo, CheckInterval: SecondsOrDuration{time.Second * 15}}, false, "-10s"},
-		{Monitor{lastCheck: timeTwentySecAgo, CheckInterval: SecondsOrDuration{time.Second * 15}}, true, "-20s"},
+		{Monitor{lastCheck: timeNow, CheckInterval: time.Second * 15}, false, "Just checked"},
+		{Monitor{lastCheck: timeTenSecAgo, CheckInterval: time.Second * 15}, false, "-10s"},
+		{Monitor{lastCheck: timeTwentySecAgo, CheckInterval: time.Second * 15}, true, "-20s"},
 	}
 
 	for _, c := range cases {
@@ -267,22 +267,22 @@ func TestMonitorCheck(t *testing.T) {
 		name    string
 	}{
 		{
-			Monitor{Command: CommandOrShell{Command: []string{"echo", "success"}}},
+			Monitor{Command: []string{"echo", "success"}},
 			expected{isSuccess: true, hasNotice: false, lastOutput: "success\n"},
 			"Test successful command",
 		},
 		{
-			Monitor{Command: CommandOrShell{ShellCommand: "echo success"}},
+			Monitor{ShellCommand: "echo success"},
 			expected{isSuccess: true, hasNotice: false, lastOutput: "success\n"},
 			"Test successful command shell",
 		},
 		{
-			Monitor{Command: CommandOrShell{Command: []string{"total", "failure"}}},
+			Monitor{Command: []string{"total", "failure"}},
 			expected{isSuccess: false, hasNotice: true, lastOutput: ""},
 			"Test failed command",
 		},
 		{
-			Monitor{Command: CommandOrShell{ShellCommand: "false"}},
+			Monitor{ShellCommand: "false"},
 			expected{isSuccess: false, hasNotice: true, lastOutput: ""},
 			"Test failed command shell",
 		},

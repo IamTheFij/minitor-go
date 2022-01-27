@@ -18,7 +18,7 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					{
 						Name:    "Success",
-						Command: CommandOrShell{Command: []string{"true"}},
+						Command: []string{"true"},
 					},
 				},
 			},
@@ -30,7 +30,7 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
+						Command:    []string{"false"},
 						AlertAfter: 1,
 					},
 				},
@@ -43,7 +43,7 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					{
 						Name:       "Success",
-						Command:    CommandOrShell{Command: []string{"ls"}},
+						Command:    []string{"ls"},
 						alertCount: 1,
 					},
 				},
@@ -56,7 +56,7 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
+						Command:    []string{"false"},
 						AlertDown:  []string{"unknown"},
 						AlertAfter: 1,
 					},
@@ -70,7 +70,7 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					{
 						Name:       "Success",
-						Command:    CommandOrShell{Command: []string{"true"}},
+						Command:    []string{"true"},
 						AlertUp:    []string{"unknown"},
 						alertCount: 1,
 					},
@@ -84,15 +84,16 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
+						Command:    []string{"false"},
 						AlertDown:  []string{"good"},
 						AlertAfter: 1,
 					},
 				},
-				Alerts: map[string]*Alert{
-					"good": {
-						Command: CommandOrShell{Command: []string{"true"}},
-					},
+				Alerts: AlertContainer{
+					Alerts: []*Alert{{
+						Name:    "good",
+						Command: []string{"true"},
+					}},
 				},
 			},
 			expectErr: false,
@@ -103,16 +104,16 @@ func TestCheckMonitors(t *testing.T) {
 				Monitors: []*Monitor{
 					{
 						Name:       "Failure",
-						Command:    CommandOrShell{Command: []string{"false"}},
+						Command:    []string{"false"},
 						AlertDown:  []string{"bad"},
 						AlertAfter: 1,
 					},
 				},
-				Alerts: map[string]*Alert{
-					"bad": {
+				Alerts: AlertContainer{
+					Alerts: []*Alert{{
 						Name:    "bad",
-						Command: CommandOrShell{Command: []string{"false"}},
-					},
+						Command: []string{"false"},
+					}},
 				},
 			},
 			expectErr: true,

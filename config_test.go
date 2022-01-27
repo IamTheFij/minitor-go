@@ -11,21 +11,42 @@ func TestLoadConfig(t *testing.T) {
 		configPath string
 		expectErr  bool
 		name       string
-		pyCompat   bool
 	}{
-		{"./test/valid-config.yml", false, "Valid config file", false},
-		{"./test/valid-default-log-alert.yml", false, "Valid config file with default log alert PyCompat", true},
-		{"./test/valid-default-log-alert.yml", true, "Invalid config file no log alert", false},
-		{"./test/does-not-exist", true, "Invalid config path", false},
-		{"./test/invalid-config-type.yml", true, "Invalid config type for key", false},
-		{"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts", false},
-		{"./test/invalid-config-unknown-alert.yml", true, "Invalid config unknown alert", false},
+		{
+			"./test/valid-config.hcl",
+			false,
+			"Valid config file",
+		},
+		{
+			"./test/valid-default-log-alert.yml",
+			true,
+			"Invalid config file no log alert",
+		},
+		{
+			"./test/does-not-exist",
+			true,
+			"Invalid config path",
+		},
+		{
+			"./test/invalid-config-type.yml",
+			true,
+			"Invalid config type for key",
+		},
+		{
+			"./test/invalid-config-missing-alerts.yml",
+			true,
+			"Invalid config missing alerts",
+		},
+		{
+			"./test/invalid-config-unknown-alert.yml",
+			true,
+			"Invalid config unknown alert",
+		},
 	}
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
 		// Set PyCompat based on compatibility mode
-		PyCompat = c.pyCompat
 		_, err := LoadConfig(c.configPath)
 		hasErr := (err != nil)
 
@@ -33,9 +54,6 @@ func TestLoadConfig(t *testing.T) {
 			t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectErr, err)
 			log.Printf("Case failed: %s", c.name)
 		}
-
-		// Set PyCompat to default value
-		PyCompat = false
 	}
 }
 
@@ -52,15 +70,15 @@ func TestIntervalParsing(t *testing.T) {
 	oneMinute := time.Minute
 
 	// validate top level interval seconds represented as an int
-	if config.CheckInterval.Value() != oneSecond {
+	if config.CheckInterval != oneSecond {
 		t.Errorf("Incorrectly parsed int seconds. expected=%v actual=%v", oneSecond, config.CheckInterval)
 	}
 
-	if config.Monitors[0].CheckInterval.Value() != tenSeconds {
+	if config.Monitors[0].CheckInterval != tenSeconds {
 		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
 	}
 
-	if config.Monitors[1].CheckInterval.Value() != oneMinute {
+	if config.Monitors[1].CheckInterval != oneMinute {
 		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
 	}
 
@@ -81,7 +99,7 @@ func TestMultiLineConfig(t *testing.T) {
 	log.Println("TestMultiLineConfig(parse > string)")
 
 	expected := "echo 'Some string with stuff'; echo \"<angle brackets>\"; exit 1\n"
-	actual := config.Monitors[0].Command.ShellCommand
+	actual := config.Monitors[0].ShellCommand
 
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(>) failed")
@@ -96,7 +114,7 @@ func TestMultiLineConfig(t *testing.T) {
 
 	_, notice := config.Monitors[0].Check()
 	if notice == nil {
-		t.Fatalf("Did not receive an alert notice")
+		t.Fatal("Did not receive an alert notice")
 	}
 
 	expected = "Some string with stuff\n<angle brackets>\n"
@@ -114,8 +132,13 @@ func TestMultiLineConfig(t *testing.T) {
 	log.Println("TestMultiLineConfig(parse | string)")
 
 	expected = "echo 'Some string with stuff'\necho '<angle brackets>'\n"
-	actual = config.Alerts["log_shell"].Command.ShellCommand
 
+	alert, ok := config.Alerts.Get("log_shell")
+	if !ok {
+		t.Fatal("Could not find expected alert 'log_shell'")
+	}
+
+	actual = alert.ShellCommand
 	if expected != actual {
 		t.Errorf("TestMultiLineConfig(|) failed")
 		t.Logf("string expected=`%v`", expected)
@@ -127,7 +150,7 @@ func TestMultiLineConfig(t *testing.T) {
 	log.Println("-----")
 	log.Println("TestMultiLineConfig(execute | string)")
 
-	actual, err = config.Alerts["log_shell"].Send(AlertNotice{})
+	actual, err = alert.Send(AlertNotice{})
 	if err != nil {
 		t.Errorf("Execution of alert failed")
 	}

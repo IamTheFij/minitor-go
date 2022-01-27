@@ -2,82 +2,93 @@ package main
 
 import (
 	"errors"
-	"io/ioutil"
 	"time"
 
 	"git.iamthefij.com/iamthefij/slog"
-	"gopkg.in/yaml.v2"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
+	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
 var errInvalidConfig = errors.New("Invalid configuration")
 
 // Config type is contains all provided user configuration
 type Config struct {
-	CheckInterval SecondsOrDuration `yaml:"check_interval"`
-	Monitors      []*Monitor
-	Alerts        map[string]*Alert
+	CheckInterval time.Duration  `hcl:"check_interval"`
+	Monitors      []*Monitor     `hcl:"monitor,block"`
+	Alerts        AlertContainer `hcl:"alerts,block"`
 }
 
-// CommandOrShell type wraps a string or list of strings
-// for executing a command directly or in a shell
-type CommandOrShell struct {
-	ShellCommand string
-	Command      []string
-}
+func (p *Parser) decodeConfig(block *hcl.Block, ectx *hcl.EvalContext) (*Config, hcl.Diagnostics) {
+	var b struct {
+		CheckInterval string         `hcl:"check_interval"`
+		Monitors      []*Monitor     `hcl:"monitor,block"`
+		Alerts        AlertContainer `hcl:"alerts,block"`
+	}
+	diags := gohcl.DecodeBody(block.Body, ectx, &b)
+	if diags.HasErrors() {
+		return nil, diags
+	}
 
-// Empty checks if the Command has a value
-func (cos CommandOrShell) Empty() bool {
-	return (cos.ShellCommand == "" && cos.Command == nil)
-}
+	config := &Config{
+		Monitors: b.Monitors,
+		Alerts:   b.Alerts,
+	}
 
-// UnmarshalYAML allows unmarshalling either a string or slice of strings
-// and parsing them as either a command or a shell command.
-func (cos *CommandOrShell) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var cmd []string
-	err := unmarshal(&cmd)
-	// Error indicates this is shell command
+	// Set a default for CheckInterval
+	if b.CheckInterval == "" {
+		b.CheckInterval = "30s"
+	}
+
+	checkInterval, err := time.ParseDuration(b.CheckInterval)
 	if err != nil {
-		var shellCmd string
+		return nil, append(diags, &hcl.Diagnostic{
+			Summary:  "Failed to parse check_interval duration",
+			Severity: hcl.DiagError,
+			Detail:   err.Error(),
+			Subject:  &block.DefRange,
+		})
+	}
+	config.CheckInterval = checkInterval
 
-		err := unmarshal(&shellCmd)
-		if err != nil {
-			return err
+	return config, diags
+}
+
+// AlertContainer is struct wrapping map access to alerts
+type AlertContainer struct {
+	Alerts      []*Alert `hcl:"alert,block"`
+	alertLookup map[string]*Alert
+}
+
+// Get returns an alert based on it's name
+func (ac AlertContainer) Get(name string) (*Alert, bool) {
+	// Build lookup map on first run
+	if ac.alertLookup == nil {
+		ac.alertLookup = map[string]*Alert{}
+		for _, alert := range ac.Alerts {
+			ac.alertLookup[alert.Name] = alert
 		}
-
-		cos.ShellCommand = shellCmd
-	} else {
-		cos.Command = cmd
 	}
 
-	return nil
+	v, ok := ac.alertLookup[name]
+
+	return v, ok
 }
 
-// SecondsOrDuration wraps a duration value for parsing a duration or seconds from YAML
-// NOTE: This should be removed in favor of only parsing durations once compatibility is broken
-type SecondsOrDuration struct {
-	value time.Duration
+// IsEmpty checks if there are any defined alerts
+func (ac AlertContainer) IsEmpty() bool {
+	return ac.Alerts == nil || len(ac.Alerts) == 0
 }
 
-// Value returns a duration value
-func (sod SecondsOrDuration) Value() time.Duration {
-	return sod.value
-}
-
-// UnmarshalYAML allows unmarshalling a duration value or seconds if an int was provided
-func (sod *SecondsOrDuration) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var seconds int64
-	err := unmarshal(&seconds)
-
-	if err == nil {
-		sod.value = time.Second * time.Duration(seconds)
-
-		return nil
+// BuildAllTemplates builds all alert templates
+func (ac *AlertContainer) BuildAllTemplates() (err error) {
+	for _, alert := range ac.Alerts {
+		if err = alert.BuildTemplates(); err != nil {
+			return
+		}
 	}
 
-	// Error indicates that we don't have an int
-	err = unmarshal(&sod.value)
-
-	return err
+	return
 }
 
 // IsValid checks config validity and returns true if valid
@@ -85,14 +96,14 @@ func (config Config) IsValid() (isValid bool) {
 	isValid = true
 
 	// Validate alerts
-	if config.Alerts == nil || len(config.Alerts) == 0 {
+	if config.Alerts.IsEmpty() {
 		// This should never happen because there is a default alert named 'log' for now
 		slog.Errorf("Invalid alert configuration: Must provide at least one alert")
 
 		isValid = false
 	}
 
-	for _, alert := range config.Alerts {
+	for _, alert := range config.Alerts.Alerts {
 		if !alert.IsValid() {
 			slog.Errorf("Invalid alert configuration: %+v", alert.Name)
 
@@ -118,7 +129,7 @@ func (config Config) IsValid() (isValid bool) {
 		// Check that all Monitor alerts actually exist
 		for _, isUp := range []bool{true, false} {
 			for _, alertName := range monitor.GetAlertNames(isUp) {
-				if _, ok := config.Alerts[alertName]; !ok {
+				if _, ok := config.Alerts.Get(alertName); !ok {
 					slog.Errorf(
 						"Invalid monitor configuration: %s. Unknown alert %s",
 						monitor.Name, alertName,
@@ -135,41 +146,19 @@ func (config Config) IsValid() (isValid bool) {
 
 // Init performs extra initialization on top of loading the config from file
 func (config *Config) Init() (err error) {
-	for name, alert := range config.Alerts {
-		alert.Name = name
-		if err = alert.BuildTemplates(); err != nil {
-			return
-		}
-	}
+	err = config.Alerts.BuildAllTemplates()
 
 	return
 }
 
 // LoadConfig will read config from the given path and parse it
 func LoadConfig(filePath string) (config Config, err error) {
-	data, err := ioutil.ReadFile(filePath)
-	if err != nil {
-		return
-	}
-
-	err = yaml.Unmarshal(data, &config)
+	err = hclsimple.DecodeFile(filePath, nil, &config)
 	if err != nil {
 		return
 	}
 
 	slog.Debugf("Config values:\n%v\n", config)
-
-	// Add log alert if not present
-	if PyCompat {
-		// Initialize alerts list if not present
-		if config.Alerts == nil {
-			config.Alerts = map[string]*Alert{}
-		}
-
-		if _, ok := config.Alerts["log"]; !ok {
-			config.Alerts["log"] = NewLogAlert()
-		}
-	}
 
 	// Finish initializing configuration
 	if err = config.Init(); err != nil {
