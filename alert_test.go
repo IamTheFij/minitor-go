@@ -10,8 +10,8 @@ func TestAlertIsValid(t *testing.T) {
 		expected bool
 		name     string
 	}{
-		{Alert{Command: CommandOrShell{Command: []string{"echo", "test"}}}, true, "Command only"},
-		{Alert{Command: CommandOrShell{ShellCommand: "echo test"}}, true, "CommandShell only"},
+		{Alert{Command: []string{"echo", "test"}}, true, "Command only"},
+		{Alert{ShellCommand: "echo test"}, true, "CommandShell only"},
 		{Alert{}, false, "No commands"},
 	}
 
@@ -36,39 +36,34 @@ func TestAlertSend(t *testing.T) {
 		expectedOutput string
 		expectErr      bool
 		name           string
-		pyCompat       bool
 	}{
 		{
-			Alert{Command: CommandOrShell{Command: []string{"echo", "{{.MonitorName}}"}}},
+			Alert{Command: []string{"echo", "{{.MonitorName}}"}},
 			AlertNotice{MonitorName: "test"},
 			"test\n",
 			false,
 			"Command with template",
-			false,
 		},
 		{
-			Alert{Command: CommandOrShell{ShellCommand: "echo {{.MonitorName}}"}},
+			Alert{ShellCommand: "echo {{.MonitorName}}"},
 			AlertNotice{MonitorName: "test"},
 			"test\n",
 			false,
 			"Command shell with template",
-			false,
 		},
 		{
-			Alert{Command: CommandOrShell{Command: []string{"echo", "{{.Bad}}"}}},
+			Alert{Command: []string{"echo", "{{.Bad}}"}},
 			AlertNotice{MonitorName: "test"},
 			"",
 			true,
 			"Command with bad template",
-			false,
 		},
 		{
-			Alert{Command: CommandOrShell{ShellCommand: "echo {{.Bad}}"}},
+			Alert{ShellCommand: "echo {{.Bad}}"},
 			AlertNotice{MonitorName: "test"},
 			"",
 			true,
 			"Command shell with bad template",
-			false,
 		},
 		// Test default log alert down
 		{
@@ -77,7 +72,6 @@ func TestAlertSend(t *testing.T) {
 			"Test check has failed 1 times\n",
 			false,
 			"Default log alert down",
-			false,
 		},
 		// Test default log alert up
 		{
@@ -86,7 +80,6 @@ func TestAlertSend(t *testing.T) {
 			"Test has recovered\n",
 			false,
 			"Default log alert up",
-			false,
 		},
 	}
 
@@ -131,8 +124,8 @@ func TestAlertBuildTemplate(t *testing.T) {
 		expectErr bool
 		name      string
 	}{
-		{Alert{Command: CommandOrShell{Command: []string{"echo", "test"}}}, false, "Command only"},
-		{Alert{Command: CommandOrShell{ShellCommand: "echo test"}}, false, "CommandShell only"},
+		{Alert{Command: []string{"echo", "test"}}, false, "Command only"},
+		{Alert{ShellCommand: "echo test"}, false, "CommandShell only"},
 		{Alert{}, true, "No commands"},
 	}
 
