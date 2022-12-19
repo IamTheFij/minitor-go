@@ -15,6 +15,7 @@ var errInvalidConfig = errors.New("Invalid configuration")
 type Config struct {
 	CheckInterval     SecondsOrDuration `yaml:"check_interval"`
 	DefaultAlertAfter int16             `yaml:"default_alert_after"`
+	DefaultAlertEvery *int16            `yaml:"default_alert_every"`
 	DefaultAlertDown  []string          `yaml:"default_alert_down"`
 	DefaultAlertUp    []string          `yaml:"default_alert_up"`
 	Monitors          []*Monitor
@@ -141,6 +142,10 @@ func (config *Config) Init() (err error) {
 	for _, monitor := range config.Monitors {
 		if monitor.AlertAfter == 0 && config.DefaultAlertAfter > 0 {
 			monitor.AlertAfter = config.DefaultAlertAfter
+		}
+
+		if monitor.AlertEvery == nil && config.DefaultAlertEvery != nil {
+			monitor.AlertEvery = config.DefaultAlertEvery
 		}
 
 		if len(monitor.AlertDown) == 0 && len(config.DefaultAlertDown) > 0 {

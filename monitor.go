@@ -12,7 +12,7 @@ import (
 type Monitor struct { //nolint:maligned
 	// Config values
 	AlertAfter    int16             `yaml:"alert_after"`
-	AlertEvery    int16             `yaml:"alert_every"`
+	AlertEvery    *int16            `yaml:"alert_every"`
 	CheckInterval SecondsOrDuration `yaml:"check_interval"`
 	Name          string
 	AlertDown     []string `yaml:"alert_down"`
@@ -129,14 +129,14 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 
 	// Use alert cadence to determine if we should alert
 	switch {
-	case monitor.AlertEvery > 0:
-		// Handle integer number of failures before alerting
-		if failureCount%monitor.AlertEvery == 0 {
-			notice = monitor.createAlertNotice(false)
-		}
-	case monitor.AlertEvery == 0:
+	case monitor.AlertEvery == nil, *monitor.AlertEvery == 0:
 		// Handle alerting on first failure only
 		if failureCount == 0 {
+			notice = monitor.createAlertNotice(false)
+		}
+	case *monitor.AlertEvery > 0:
+		// Handle integer number of failures before alerting
+		if failureCount%*monitor.AlertEvery == 0 {
 			notice = monitor.createAlertNotice(false)
 		}
 	default:

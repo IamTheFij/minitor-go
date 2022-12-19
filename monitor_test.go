@@ -141,17 +141,19 @@ func TestMonitorSuccess(t *testing.T) {
 // TestMonitorFailureAlertAfter tests that alerts will not trigger until
 // hitting the threshold provided by AlertAfter
 func TestMonitorFailureAlertAfter(t *testing.T) {
+	var alertEvery int16 = 1
+
 	cases := []struct {
 		monitor      Monitor
 		expectNotice bool
 		name         string
 	}{
 		{Monitor{AlertAfter: 1}, true, "Empty"}, // Defaults to true because and AlertEvery default to 0
-		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 1}, true, "Alert after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 1}, true, "Alert after 1: second failure"},
-		{Monitor{failureCount: 0, AlertAfter: 20, AlertEvery: 1}, false, "Alert after 20: first failure"},
-		{Monitor{failureCount: 19, AlertAfter: 20, AlertEvery: 1}, true, "Alert after 20: 20th failure"},
-		{Monitor{failureCount: 20, AlertAfter: 20, AlertEvery: 1}, true, "Alert after 20: 21st failure"},
+		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: &alertEvery}, true, "Alert after 1: first failure"},
+		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: &alertEvery}, true, "Alert after 1: second failure"},
+		{Monitor{failureCount: 0, AlertAfter: 20, AlertEvery: &alertEvery}, false, "Alert after 20: first failure"},
+		{Monitor{failureCount: 19, AlertAfter: 20, AlertEvery: &alertEvery}, true, "Alert after 20: 20th failure"},
+		{Monitor{failureCount: 20, AlertAfter: 20, AlertEvery: &alertEvery}, true, "Alert after 20: 21st failure"},
 	}
 
 	for _, c := range cases {
@@ -172,6 +174,11 @@ func TestMonitorFailureAlertAfter(t *testing.T) {
 // TestMonitorFailureAlertEvery tests that alerts will trigger
 // on the expected intervals
 func TestMonitorFailureAlertEvery(t *testing.T) {
+	var alertEvery0, alertEvery1, alertEvery2 int16
+	alertEvery0 = 0
+	alertEvery1 = 1
+	alertEvery2 = 2
+
 	cases := []struct {
 		monitor      Monitor
 		expectNotice bool
@@ -186,20 +193,20 @@ func TestMonitorFailureAlertEvery(t *testing.T) {
 
 			For usabilty, this should be consistent. Consistent with what though? minitor-py? Or itself? Dun dun duuuunnnnn!
 		*/
-		{Monitor{AlertAfter: 1}, true, "Empty"}, // Defaults to true because AlertAfter and AlertEvery default to 0
+		{Monitor{AlertAfter: 1}, true, "Empty"}, // Defaults to true because AlertAfter and AlertEvery default to nil
 		// Alert first time only, after 1
-		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 0}, true, "Alert first time only after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 0}, false, "Alert first time only after 1: second failure"},
-		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: 0}, false, "Alert first time only after 1: third failure"},
+		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: &alertEvery0}, true, "Alert first time only after 1: first failure"},
+		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: &alertEvery0}, false, "Alert first time only after 1: second failure"},
+		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: &alertEvery0}, false, "Alert first time only after 1: third failure"},
 		// Alert every time, after 1
-		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 1}, true, "Alert every time after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 1}, true, "Alert every time after 1: second failure"},
-		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 1}, true, "Alert every time after 1: third failure"},
+		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: &alertEvery1}, true, "Alert every time after 1: first failure"},
+		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: &alertEvery1}, true, "Alert every time after 1: second failure"},
+		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: &alertEvery1}, true, "Alert every time after 1: third failure"},
 		// Alert every other time, after 1
-		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: 2}, true, "Alert every other time after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: 2}, false, "Alert every other time after 1: second failure"},
-		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: 2}, true, "Alert every other time after 1: third failure"},
-		{Monitor{failureCount: 3, AlertAfter: 1, AlertEvery: 2}, false, "Alert every other time after 1: fourth failure"},
+		{Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: &alertEvery2}, true, "Alert every other time after 1: first failure"},
+		{Monitor{failureCount: 1, AlertAfter: 1, AlertEvery: &alertEvery2}, false, "Alert every other time after 1: second failure"},
+		{Monitor{failureCount: 2, AlertAfter: 1, AlertEvery: &alertEvery2}, true, "Alert every other time after 1: third failure"},
+		{Monitor{failureCount: 3, AlertAfter: 1, AlertEvery: &alertEvery2}, false, "Alert every other time after 1: fourth failure"},
 	}
 
 	for _, c := range cases {
@@ -220,6 +227,8 @@ func TestMonitorFailureAlertEvery(t *testing.T) {
 // TestMonitorFailureExponential tests that alerts will trigger
 // with an exponential backoff after repeated failures
 func TestMonitorFailureExponential(t *testing.T) {
+	var alertEveryExp int16 = -1
+
 	cases := []struct {
 		expectNotice bool
 		name         string
@@ -236,7 +245,7 @@ func TestMonitorFailureExponential(t *testing.T) {
 
 	// Unlike previous tests, this one requires a static Monitor with repeated
 	// calls to the failure method
-	monitor := Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: -1}
+	monitor := Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: &alertEveryExp}
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
