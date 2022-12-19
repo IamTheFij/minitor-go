@@ -9,6 +9,7 @@ linters:
     - gomnd
     - goprintffuncname
     - misspell
+    - promlinter
     - tagliatelle
     - tenv
     - testpackage

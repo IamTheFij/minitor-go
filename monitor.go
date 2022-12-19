@@ -91,9 +91,9 @@ func (monitor Monitor) IsUp() bool {
 	return monitor.alertCount == 0
 }
 
-// LastCheckMilliseconds gives number of miliseconds the last check ran for
-func (monitor Monitor) LastCheckMilliseconds() int64 {
-	return monitor.lastCheckDuration.Milliseconds()
+// LastCheckSeconds gives number of seconds the last check ran for
+func (monitor Monitor) LastCheckSeconds() float64 {
+	return monitor.lastCheckDuration.Seconds()
 }
 
 func (monitor *Monitor) success() (notice *AlertNotice) {

@@ -43,14 +43,14 @@ func NewMetrics() *MinitorMetrics {
 		),
 		checkTime: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: "minitor_check_milliseconds",
+				Name: "minitor_check_seconds",
 				Help: "Time in miliseconds that a check ran for",
 			},
 			[]string{"monitor", "status"},
 		),
 		monitorStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: "minitor_monitor_up_count",
+				Name: "minitor_monitor_up",
 				Help: "Status of currently responsive monitors",
 			},
 			[]string{"monitor"},
@@ -77,7 +77,7 @@ func (metrics *MinitorMetrics) SetMonitorStatus(monitor string, isUp bool) {
 }
 
 // CountCheck counts the result of a particular Monitor check
-func (metrics *MinitorMetrics) CountCheck(monitor string, isSuccess bool, ms int64, isAlert bool) {
+func (metrics *MinitorMetrics) CountCheck(monitor string, isSuccess bool, secs float64, isAlert bool) {
 	status := "failure"
 	if isSuccess {
 		status = "success"
@@ -94,7 +94,7 @@ func (metrics *MinitorMetrics) CountCheck(monitor string, isSuccess bool, ms int
 
 	metrics.checkTime.With(
 		prometheus.Labels{"monitor": monitor, "status": status},
-	).Set(float64(ms))
+	).Set(secs)
 }
 
 // CountAlert counts an alert

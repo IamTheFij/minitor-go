@@ -76,7 +76,7 @@ func checkMonitors(config *Config) error {
 
 			// Track status metrics
 			Metrics.SetMonitorStatus(monitor.Name, monitor.IsUp())
-			Metrics.CountCheck(monitor.Name, success, monitor.LastCheckMilliseconds(), hasAlert)
+			Metrics.CountCheck(monitor.Name, success, monitor.LastCheckSeconds(), hasAlert)
 
 			if alertNotice != nil {
 				err := sendAlerts(config, monitor, alertNotice)
