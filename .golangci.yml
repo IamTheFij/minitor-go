@@ -1,32 +1,22 @@
 ---
 linters:
   enable:
-    - asciicheck
-    - bodyclose
-    - dogsled
-    - dupl
+    - errname
+    - errorlint
     - exhaustive
-    - gochecknoinits
-    - gocognit
-    - gocritic
-    - gocyclo
-    - goerr113
     - gofumpt
     - goimports
     - gomnd
     - goprintffuncname
-    # - gosec
-    # - ifshort
-    - interfacer
-    - maligned
     - misspell
-    - nakedret
-    - nestif
-    - nlreturn
-    - noctx
-    - unparam
+    - tagliatelle
+    - tenv
+    - testpackage
+    - thelper
+    - tparallel
+    - unconvert
+    - wrapcheck
     - wsl
-    # - errorlint
   disable:
     - gochecknoglobals
 
@@ -34,15 +24,13 @@ linters-settings:
   gosec:
     excludes:
       - G204
-#   gomnd:
-#     settings:
-#       mnd:
-#         ignored-functions: math.*
+  tagliatelle:
+    case:
+      rules:
+        yaml: snake
 
 issues:
   exclude-rules:
     - path: _test\.go
       linters:
-        - errcheck
         - gosec
-        - maligned
