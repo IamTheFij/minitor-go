@@ -1,0 +1,12 @@
+---
+check_interval: 1
+default_alert_down: ["log_command"]
+default_alert_after: 1
+
+monitors:
+  - name: Command
+    command: ["echo", "$PATH"]
+
+alerts:
+  log_command:
+    command: ["echo", "regular", '"command!!!"', "{{.MonitorName}}"]

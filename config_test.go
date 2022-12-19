@@ -14,6 +14,7 @@ func TestLoadConfig(t *testing.T) {
 		pyCompat   bool
 	}{
 		{"./test/valid-config.yml", false, "Valid config file", false},
+		{"./test/valid-config-default-values.yml", false, "Valid config file with default values", false},
 		{"./test/valid-default-log-alert.yml", false, "Valid config file with default log alert PyCompat", true},
 		{"./test/valid-default-log-alert.yml", true, "Invalid config file no log alert", false},
 		{"./test/does-not-exist", true, "Invalid config path", false},

@@ -13,9 +13,12 @@ var errInvalidConfig = errors.New("Invalid configuration")
 
 // Config type is contains all provided user configuration
 type Config struct {
-	CheckInterval SecondsOrDuration `yaml:"check_interval"`
-	Monitors      []*Monitor
-	Alerts        map[string]*Alert
+	CheckInterval     SecondsOrDuration `yaml:"check_interval"`
+	DefaultAlertAfter int16             `yaml:"default_alert_after"`
+	DefaultAlertDown  []string          `yaml:"default_alert_down"`
+	DefaultAlertUp    []string          `yaml:"default_alert_up"`
+	Monitors          []*Monitor
+	Alerts            map[string]*Alert
 }
 
 // CommandOrShell type wraps a string or list of strings
@@ -135,8 +138,23 @@ func (config Config) IsValid() (isValid bool) {
 
 // Init performs extra initialization on top of loading the config from file
 func (config *Config) Init() (err error) {
+	for _, monitor := range config.Monitors {
+		if monitor.AlertAfter == 0 && config.DefaultAlertAfter > 0 {
+			monitor.AlertAfter = config.DefaultAlertAfter
+		}
+
+		if len(monitor.AlertDown) == 0 && len(config.DefaultAlertDown) > 0 {
+			monitor.AlertDown = config.DefaultAlertDown
+		}
+
+		if len(monitor.AlertUp) == 0 && len(config.DefaultAlertUp) > 0 {
+			monitor.AlertUp = config.DefaultAlertUp
+		}
+	}
+
 	for name, alert := range config.Alerts {
 		alert.Name = name
+
 		if err = alert.BuildTemplates(); err != nil {
 			return
 		}
