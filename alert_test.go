@@ -100,8 +100,6 @@ func TestAlertSend(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
-		// Set PyCompat to value of compat flag
-		PyCompat = c.pyCompat
 
 		err := c.alert.BuildTemplates()
 		if err != nil {
@@ -120,9 +118,6 @@ func TestAlertSend(t *testing.T) {
 			t.Errorf("Send(%v err), expected=%v actual=%v", c.name, "Err", err)
 			log.Printf("Case failed: %s", c.name)
 		}
-
-		// Set PyCompat back to default value
-		PyCompat = false
 
 		log.Println("-----")
 	}

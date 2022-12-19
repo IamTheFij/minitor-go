@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
-	"strings"
 	"text/template"
 	"time"
 
@@ -45,16 +44,6 @@ func (alert Alert) IsValid() bool {
 
 // BuildTemplates compiles command templates for the Alert
 func (alert *Alert) BuildTemplates() error {
-	// TODO: Remove legacy template support later after 1.0
-	legacy := strings.NewReplacer(
-		"{alert_count}", "{{.AlertCount}}",
-		"{alert_message}", "{{.MonitorName}} check has failed {{.FailureCount}} times",
-		"{failure_count}", "{{.FailureCount}}",
-		"{last_output}", "{{.LastCheckOutput}}",
-		"{last_success}", "{{.LastSuccess}}",
-		"{monitor_name}", "{{.MonitorName}}",
-	)
-
 	slog.Debugf("Building template for alert %s", alert.Name)
 
 	// Time format func factory
@@ -92,20 +81,12 @@ func (alert *Alert) BuildTemplates() error {
 	case alert.commandTemplate == nil && alert.Command.Command != nil:
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command.Command {
-			if PyCompat {
-				cmdPart = legacy.Replace(cmdPart)
-			}
-
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+fmt.Sprint(i)).Funcs(timeFormatFuncs).Parse(cmdPart),
 			))
 		}
 	case alert.commandShellTemplate == nil && alert.Command.ShellCommand != "":
 		shellCmd := alert.Command.ShellCommand
-
-		if PyCompat {
-			shellCmd = legacy.Replace(shellCmd)
-		}
 
 		alert.commandShellTemplate = template.Must(
 			template.New(alert.Name).Funcs(timeFormatFuncs).Parse(shellCmd),

@@ -188,7 +188,7 @@ minitor-go:
 check_interval: 1m30s
 ```
 
-For the time being, legacy configs for the Python version of Minitor should be compatible if you apply the `-py-compat` flag when running Minitor. Eventually, this flag will go away when later breaking changes are introduced.
+The `-py-compat` flag has been removed. Any existing Python oriented configuration needs to be migrated to the new templates.
 
 ## Future
 

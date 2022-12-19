@@ -15,7 +15,6 @@ func TestLoadConfig(t *testing.T) {
 	}{
 		{"./test/valid-config.yml", false, "Valid config file", false},
 		{"./test/valid-config-default-values.yml", false, "Valid config file with default values", false},
-		{"./test/valid-default-log-alert.yml", false, "Valid config file with default log alert PyCompat", true},
 		{"./test/valid-default-log-alert.yml", true, "Invalid config file no log alert", false},
 		{"./test/does-not-exist", true, "Invalid config path", false},
 		{"./test/invalid-config-type.yml", true, "Invalid config type for key", false},
@@ -25,8 +24,6 @@ func TestLoadConfig(t *testing.T) {
 
 	for _, c := range cases {
 		log.Printf("Testing case %s", c.name)
-		// Set PyCompat based on compatibility mode
-		PyCompat = c.pyCompat
 		_, err := LoadConfig(c.configPath)
 		hasErr := (err != nil)
 
@@ -34,9 +31,6 @@ func TestLoadConfig(t *testing.T) {
 			t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectErr, err)
 			log.Printf("Case failed: %s", c.name)
 		}
-
-		// Set PyCompat to default value
-		PyCompat = false
 	}
 }
 
