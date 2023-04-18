@@ -2,7 +2,7 @@ package main
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 	"time"
 
 	"git.iamthefij.com/iamthefij/slog"
@@ -170,7 +170,7 @@ func (config *Config) Init() (err error) {
 
 // LoadConfig will read config from the given path and parse it
 func LoadConfig(filePath string) (config Config, err error) {
-	data, err := ioutil.ReadFile(filePath)
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return
 	}
