@@ -58,6 +58,7 @@ The global configurations are:
 |---|---|
 |`check_interval`|Maximum frequency to run checks for each monitor as duration, eg. 1m2s.|
 |`default_alert_after`|A default value used as an `alert_after` value for a monitor if not specified or 0.|
+|`default_alert_every`|A default value used as an `alert_every` value for a monitor if not specified.|
 |`default_alert_down`|Default down alerts to used by a monitor in case none are provided.|
 |`default_alert_up`|Default up alerts to used by a monitor in case none are provided.|
 |`monitors`|List of all monitors. Detailed description below|
