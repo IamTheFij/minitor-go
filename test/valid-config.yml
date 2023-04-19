@@ -1,5 +1,5 @@
 ---
-check_interval: 1
+check_interval: 1s
 
 monitors:
   - name: Command
