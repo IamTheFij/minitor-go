@@ -120,6 +120,6 @@ func main() {
 		err = checkMonitors(&config)
 		slog.OnErrPanicf(err, "Error checking monitors")
 
-		time.Sleep(config.CheckInterval.Value())
+		time.Sleep(config.CheckInterval)
 	}
 }
