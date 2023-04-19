@@ -14,7 +14,7 @@ ARG VERSION=dev
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH}
 RUN go build -ldflags "-X main.version=${VERSION}" -a -installsuffix nocgo -o minitor .
 
-FROM ${REPO}/alpine:3.12
+FROM ${REPO}/alpine:3.17
 RUN mkdir /app
 WORKDIR /app/
 
@@ -22,7 +22,7 @@ WORKDIR /app/
 COPY --from=builder /app/minitor .
 
 # Add common checking tools
-RUN apk --no-cache add bash=~5.0 curl=~7.79 jq=~1.6
+RUN apk --no-cache add bash=~5 curl=~8 jq=~1.6 bind-tools~=9
 
 # Add minitor user for running as non-root
 RUN addgroup -S minitor && adduser -S minitor -G minitor
