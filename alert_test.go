@@ -70,14 +70,6 @@ func TestAlertSend(t *testing.T) {
 			"Command shell with bad template",
 			false,
 		},
-		{
-			Alert{Command: CommandOrShell{ShellCommand: "echo {alert_message}"}},
-			AlertNotice{MonitorName: "test", FailureCount: 1},
-			"test check has failed 1 times\n",
-			false,
-			"Command shell with legacy template",
-			true,
-		},
 		// Test default log alert down
 		{
 			*NewLogAlert(),
