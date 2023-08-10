@@ -168,7 +168,7 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 
 	if err != nil {
 		err = fmt.Errorf(
-			"Alert '%s' failed to send. Returned %v: %w",
+			"Alert %s failed to send. Returned %w: %w",
 			alert.Name,
 			err,
 			ErrAlertFailed,
