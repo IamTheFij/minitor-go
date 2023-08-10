@@ -57,6 +57,37 @@ func (alert *Alert) BuildTemplates() error {
 
 	slog.Debugf("Building template for alert %s", alert.Name)
 
+	// Time format func factory
+	tff := func(formatString string) func(time.Time) string {
+		return func(t time.Time) string {
+			return t.Format(formatString)
+		}
+	}
+
+	// Create some functions for formatting datetimes in popular formats
+	timeFormatFuncs := template.FuncMap{
+		"ANSIC":       tff(time.ANSIC),
+		"UnixDate":    tff(time.UnixDate),
+		"RubyDate":    tff(time.RubyDate),
+		"RFC822Z":     tff(time.RFC822Z),
+		"RFC850":      tff(time.RFC850),
+		"RFC1123":     tff(time.RFC1123),
+		"RFC1123Z":    tff(time.RFC1123Z),
+		"RFC3339":     tff(time.RFC3339),
+		"RFC3339Nano": tff(time.RFC3339Nano),
+		"FormatTime": func(t time.Time, timeFormat string) string {
+			return t.Format(timeFormat)
+		},
+		"InTZ": func(t time.Time, tzName string) (time.Time, error) {
+			tz, err := time.LoadLocation(tzName)
+			if err != nil {
+				return t, fmt.Errorf("failed to convert time to specified tz: %w", err)
+			}
+
+			return t.In(tz), nil
+		},
+	}
+
 	switch {
 	case alert.commandTemplate == nil && alert.Command.Command != nil:
 		alert.commandTemplate = []*template.Template{}
@@ -66,7 +97,7 @@ func (alert *Alert) BuildTemplates() error {
 			}
 
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
-				template.New(alert.Name+fmt.Sprint(i)).Parse(cmdPart),
+				template.New(alert.Name+fmt.Sprint(i)).Funcs(timeFormatFuncs).Parse(cmdPart),
 			))
 		}
 	case alert.commandShellTemplate == nil && alert.Command.ShellCommand != "":
@@ -77,7 +108,7 @@ func (alert *Alert) BuildTemplates() error {
 		}
 
 		alert.commandShellTemplate = template.Must(
-			template.New(alert.Name).Parse(shellCmd),
+			template.New(alert.Name).Funcs(timeFormatFuncs).Parse(shellCmd),
 		)
 	default:
 		return fmt.Errorf("No template provided for alert %s: %w", alert.Name, errNoTemplate)

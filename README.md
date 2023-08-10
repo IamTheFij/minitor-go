@@ -94,9 +94,27 @@ Also, when alerts are executed, they will be passed through Go's format function
 |`{{.AlertCount}}`|Number of times this monitor has alerted|
 |`{{.FailureCount}}`|The total number of sequential failed checks for this monitor|
 |`{{.LastCheckOutput}}`|The last returned value from the check command to either stderr or stdout|
-|`{{.LastSuccess}}`|The ISO datetime of the last successful check|
+|`{{.LastSuccess}}`|The datetime of the last successful check as a go Time struct|
 |`{{.MonitorName}}`|The name of the monitor that failed and triggered the alert|
 |`{{.IsUp}}`|Indicates if the monitor that is alerting is up or not. Can be used in a conditional message template|
+
+To provide flexible formatting, the following non-standard functions are available in templates:
+
+|func|description|
+|---|---|
+|`ANSIC <Time>`|Formats provided time in ANSIC format|
+|`UnixDate <Time>`|Formats provided time in UnixDate format|
+|`RubyDate <Time>`|Formats provided time in RubyDate format|
+|`RFC822Z <Time>`|Formats provided time in RFC822Z format|
+|`RFC850 <Time>`|Formats provided time in RFC850 format|
+|`RFC1123 <Time>`|Formats provided time in RFC1123 format|
+|`RFC1123Z <Time>`|Formats provided time in RFC1123Z format|
+|`RFC3339 <Time>`|Formats provided time in RFC3339 format|
+|`RFC3339Nano <Time>`|Formats provided time in RFC3339Nano format|
+|`FormatTime <Time> <string template>`|Formats provided time according to provided template|
+|`InTZ <Time> <string timezone name>`|Converts provided time to parsed timezone from the provided name|
+
+For more information, check out the [Go documentation for the time module](https://pkg.go.dev/time@go1.20.7#pkg-constants).
 
 ### Metrics
 
