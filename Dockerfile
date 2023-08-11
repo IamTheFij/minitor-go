@@ -5,7 +5,7 @@ RUN mkdir /app
 WORKDIR /app/
 
 # Add common checking tools
-RUN apk --no-cache add bash=~5 curl=~8 jq=~1 bind-tools=~9
+RUN apk --no-cache add bash=~5 curl=~8 jq=~1 bind-tools=~9 tzdata~=2023c
 
 # Add minitor user for running as non-root
 RUN addgroup -S minitor && adduser -S minitor -G minitor

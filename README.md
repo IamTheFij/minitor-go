@@ -46,6 +46,8 @@ docker run -v $PWD/config.yml:/app/config.yml iamthefij/minitor-go:latest
 
 Images are provided for `amd64`, `arm`, and `arm64` architechtures.
 
+Timezone configuration for the container is set by passing the `TZ` env variable. Eg. `TZ=America/Los_Angeles`.
+
 ## Configuring
 
 In this repo, you can explore the `sample-config.yml` file for an example, but the general structure is as follows. It should be noted that environment variable interpolation happens on load of the YAML file.
