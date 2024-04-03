@@ -79,11 +79,11 @@ $(TARGET_ALIAS):
 # Arch specific docker build targets
 .PHONY: docker-build-arm
 docker-build-arm: dist/minitor-linux-arm
-	docker build --build-arg REPO=arm32v7 --build-arg ARCH=arm . -t ${DOCKER_TAG}-linux-arm
+	docker build --platform linux/arm . -t ${DOCKER_TAG}-linux-arm
 
 .PHONY: docker-build-arm64
 docker-build-arm64: dist/minitor-linux-arm64
-	docker build --build-arg REPO=arm64v8 --build-arg ARCH=arm64 . -t ${DOCKER_TAG}-linux-arm64
+	docker build  --platform linux/arm64 . -t ${DOCKER_TAG}-linux-arm64
 
 # Cross run on host architechture
 .PHONY: docker-run-arm

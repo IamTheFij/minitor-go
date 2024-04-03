@@ -60,51 +60,15 @@ steps:
     when:
       event: tag
 
-  - name: push image - arm
-    image: plugins/docker
+  - name: Build and publish docker images
+    image: thegeeklab/drone-docker-buildx
     settings:
       repo: iamthefij/minitor-go
       auto_tag: true
-      auto_tag_suffix: linux-arm
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
-      build_args:
-        - ARCH=arm
-        - REPO=arm32v7
-
-  - name: push image - arm64
-    image: plugins/docker
-    settings:
-      repo: iamthefij/minitor-go
-      auto_tag: true
-      auto_tag_suffix: linux-arm64
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
-      build_args:
-        - ARCH=arm64
-        - REPO=arm64v8
-
-  - name: push image - amd64
-    image: plugins/docker
-    settings:
-      repo: iamthefij/minitor-go
-      auto_tag: true
-      auto_tag_suffix: linux-amd64
-      username:
-        from_secret: docker_username
-      password:
-        from_secret: docker_password
-
-  - name: publish manifest
-    image: plugins/manifest
-    settings:
-      spec: manifest.tmpl
-      auto_tag: true
-      ignore_missing: true
+      platforms:
+        - linux/amd64
+        - linux/arm64
+        - linux/arm
       username:
         from_secret: docker_username
       password:
