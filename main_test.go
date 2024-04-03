@@ -134,3 +134,64 @@ func TestCheckMonitors(t *testing.T) {
 		}
 	}
 }
+
+func TestFirstRunAlerts(t *testing.T) {
+	cases := []struct {
+		config         Config
+		expectErr      bool
+		firstRunAlerts []string
+		name           string
+	}{
+		{
+			config:         Config{},
+			expectErr:      false,
+			firstRunAlerts: []string{},
+			name:           "Empty",
+		},
+		{
+			config:         Config{},
+			expectErr:      true,
+			firstRunAlerts: []string{"missing"},
+			name:           "Unknown",
+		},
+		{
+			config: Config{
+				Alerts: map[string]*Alert{
+					"good": {
+						Command: CommandOrShell{Command: []string{"true"}},
+					},
+				},
+			},
+			expectErr:      false,
+			firstRunAlerts: []string{"good"},
+			name:           "Successful alert",
+		},
+		{
+			config: Config{
+				Alerts: map[string]*Alert{
+					"bad": {
+						Name:    "bad",
+						Command: CommandOrShell{Command: []string{"false"}},
+					},
+				},
+			},
+			expectErr:      true,
+			firstRunAlerts: []string{"bad"},
+			name:           "Failed alert",
+		},
+	}
+
+	for _, c := range cases {
+		err := c.config.Init()
+		if err != nil {
+			t.Errorf("sendFirstRunAlerts(%s): unexpected error reading config: %v", c.name, err)
+		}
+
+		err = sendFirstRunAlerts(&c.config, c.firstRunAlerts)
+		if err == nil && c.expectErr {
+			t.Errorf("sendFirstRunAlerts(%s): Expected error, the code did not error", c.name)
+		} else if err != nil && !c.expectErr {
+			t.Errorf("sendFirstRunAlerts(%s): Did not expect an error, but we got one anyway: %v", c.name, err)
+		}
+	}
+}
