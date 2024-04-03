@@ -118,6 +118,16 @@ To provide flexible formatting, the following non-standard functions are availab
 
 For more information, check out the [Go documentation for the time module](https://pkg.go.dev/time@go1.20.7#pkg-constants).
 
+#### Running alerts on startup
+
+It's not the best feeling to find out your alerts are broken when you're expecting to be alerted about another failure. To avoid this and provide early insight into broken alerts, it is possible to specify a list of alerts to run when Minitor starts up. This can be done using the command line flag `-startup-alerts`. This flag accepts a comma separated list of strings and will run a test of each of those alerts. Minitor will then respond as it typically does for any failed alert. This can be used to allow you time to correct when initially launching, and to allow schedulers to more easily detect a failed deployment of Minitor.
+
+Eg.
+
+```bash
+minitor -startup-alerts=log_down,log_up -config ./config.yml
+```
+
 ### Metrics
 
 Minitor supports exporting metrics for [Prometheus](https://prometheus.io/). Prometheus is an open source tool for reading and querying metrics from different sources. Combined with another tool, [Grafana](https://grafana.com/), it allows building of charts and dashboards. You could also opt to just use Minitor to log check results, and instead do your alerting with Grafana.

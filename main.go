@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"strings"
 	"time"
 
 	"git.iamthefij.com/iamthefij/slog"
@@ -91,9 +92,38 @@ func checkMonitors(config *Config) error {
 	return nil
 }
 
+func sendStartupAlerts(config *Config, alertNames []string) error {
+	for _, alertName := range alertNames {
+		var err error
+
+		alert, ok := config.Alerts[alertName]
+		if !ok {
+			err = fmt.Errorf("unknown alert %s: %w", alertName, errUnknownAlert)
+		}
+
+		if err == nil {
+			_, err = alert.Send(AlertNotice{
+				AlertCount:      0,
+				FailureCount:    0,
+				IsUp:            true,
+				LastSuccess:     time.Now(),
+				MonitorName:     fmt.Sprintf("First Run Alert Test: %s", alert.Name),
+				LastCheckOutput: "",
+			})
+		}
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func main() {
 	showVersion := flag.Bool("version", false, "Display the version of minitor and exit")
 	configPath := flag.String("config", "config.yml", "Alternate configuration path (default: config.yml)")
+	startupAlerts := flag.String("startup-alerts", "", "List of alerts to run on startup. This can help determine unhealthy alerts early on. (default \"\")")
 
 	flag.BoolVar(&slog.DebugLevel, "debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
@@ -117,6 +147,14 @@ func main() {
 		slog.Infof("Exporting metrics to Prometheus on port %d", MetricsPort)
 
 		go ServeMetrics()
+	}
+
+	if *startupAlerts != "" {
+		alertNames := strings.Split(*startupAlerts, ",")
+
+		err = sendStartupAlerts(&config, alertNames)
+
+		slog.OnErrPanicf(err, "Error running startup alerts")
 	}
 
 	// Start main loop
