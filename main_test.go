@@ -4,9 +4,10 @@ import "testing"
 
 func TestCheckMonitors(t *testing.T) {
 	cases := []struct {
-		config    Config
-		expectErr bool
-		name      string
+		config      Config
+		expectErr   bool
+		name        string
+		selfMonitor bool
 	}{
 		{
 			config:    Config{},
@@ -22,8 +23,9 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectErr: false,
-			name:      "Monitor success, no alerts",
+			expectErr:   false,
+			name:        "Monitor success, no alerts",
+			selfMonitor: false,
 		},
 		{
 			config: Config{
@@ -35,8 +37,9 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectErr: false,
-			name:      "Monitor failure, no alerts",
+			expectErr:   false,
+			name:        "Monitor failure, no alerts",
+			selfMonitor: false,
 		},
 		{
 			config: Config{
@@ -48,8 +51,9 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectErr: false,
-			name:      "Monitor recovery, no alerts",
+			expectErr:   false,
+			name:        "Monitor recovery, no alerts",
+			selfMonitor: false,
 		},
 		{
 			config: Config{
@@ -62,8 +66,9 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectErr: true,
-			name:      "Monitor failure, unknown alerts",
+			expectErr:   true,
+			name:        "Monitor failure, unknown alerts",
+			selfMonitor: false,
 		},
 		{
 			config: Config{
@@ -76,8 +81,24 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectErr: true,
-			name:      "Monitor recovery, unknown alerts",
+			expectErr:   true,
+			name:        "Monitor recovery, unknown alerts",
+			selfMonitor: false,
+		},
+		{
+			config: Config{
+				Monitors: []*Monitor{
+					{
+						Name:       "Success",
+						Command:    CommandOrShell{Command: []string{"true"}},
+						AlertUp:    []string{"unknown"},
+						alertCount: 1,
+					},
+				},
+			},
+			expectErr:   false,
+			name:        "Monitor recovery, unknown alerts, with Health Check",
+			selfMonitor: true,
 		},
 		{
 			config: Config{
@@ -95,8 +116,9 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectErr: false,
-			name:      "Monitor failure, successful alert",
+			expectErr:   false,
+			name:        "Monitor failure, successful alert",
+			selfMonitor: false,
 		},
 		{
 			config: Config{
@@ -115,12 +137,36 @@ func TestCheckMonitors(t *testing.T) {
 					},
 				},
 			},
-			expectErr: true,
-			name:      "Monitor failure, bad alert",
+			expectErr:   true,
+			name:        "Monitor failure, bad alert",
+			selfMonitor: false,
+		},
+		{
+			config: Config{
+				Monitors: []*Monitor{
+					{
+						Name:       "Failure",
+						Command:    CommandOrShell{Command: []string{"false"}},
+						AlertDown:  []string{"bad"},
+						AlertAfter: 1,
+					},
+				},
+				Alerts: map[string]*Alert{
+					"bad": {
+						Name:    "bad",
+						Command: CommandOrShell{Command: []string{"false"}},
+					},
+				},
+			},
+			expectErr:   false,
+			name:        "Monitor failure, bad alert, with Health Check",
+			selfMonitor: true,
 		},
 	}
 
 	for _, c := range cases {
+		SelfMonitor = c.selfMonitor
+
 		err := c.config.Init()
 		if err != nil {
 			t.Errorf("checkMonitors(%s): unexpected error reading config: %v", c.name, err)

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -107,11 +106,7 @@ func (metrics *MinitorMetrics) CountAlert(monitor string, alert string) {
 	).Inc()
 }
 
-// ServeMetrics starts an http server with a Prometheus metrics handler
-func ServeMetrics() {
+// HandleMetrics add Prometheus metrics handler to default http server
+func HandleMetrics() {
 	http.Handle("/metrics", promhttp.Handler())
-
-	host := fmt.Sprintf(":%d", MetricsPort)
-
-	_ = http.ListenAndServe(host, nil)
 }

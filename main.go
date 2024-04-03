@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"net/http"
 	"time"
 
 	"git.iamthefij.com/iamthefij/slog"
@@ -16,6 +17,10 @@ var (
 	MetricsPort = 8080
 	// Metrics contains all active metrics
 	Metrics = NewMetrics()
+	// Self monitor rather than panicing
+	SelfMonitor = false
+	// HealthChecks contains health check values
+	HealthChecks *HealthCheckHandler = nil
 
 	// PyCompat enables support for legacy Python templates
 	PyCompat = false
@@ -51,7 +56,13 @@ func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) erro
 					output,
 				)
 
+				if SelfMonitor {
+					Metrics.SetMonitorStatus(fmt.Sprintf("Alert %s", alertName), false)
+				}
+
 				return err
+			} else {
+				Metrics.SetMonitorStatus(fmt.Sprintf("Alert %s", alertName), true)
 			}
 
 			// Count alert metrics
@@ -69,6 +80,8 @@ func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) erro
 
 func checkMonitors(config *Config) error {
 	// TODO: Run this in goroutines and capture exceptions
+	healthy := true
+
 	for _, monitor := range config.Monitors {
 		if monitor.ShouldCheck() {
 			success, alertNotice := monitor.Check()
@@ -80,15 +93,30 @@ func checkMonitors(config *Config) error {
 
 			if alertNotice != nil {
 				err := sendAlerts(config, monitor, alertNotice)
-				// If there was an error in sending an alert, exit early and bubble it up
+				// If there was an error in sending an alert, mark as unhealthy or bubble up
 				if err != nil {
-					return err
+					if SelfMonitor {
+						healthy = false
+					} else {
+						return err
+					}
 				}
 			}
 		}
 	}
 
+	if HealthChecks != nil {
+		HealthChecks.MinitorHealthy(healthy)
+	}
+
 	return nil
+}
+
+// ServeMetricsAndHealth starts the default http server
+func ServeMetricsAndHealth() {
+	host := fmt.Sprintf(":%d", MetricsPort)
+
+	_ = http.ListenAndServe(host, nil)
 }
 
 func main() {
@@ -98,7 +126,9 @@ func main() {
 	flag.BoolVar(&slog.DebugLevel, "debug", false, "Enables debug logs (default: false)")
 	flag.BoolVar(&ExportMetrics, "metrics", false, "Enables prometheus metrics exporting (default: false)")
 	flag.BoolVar(&PyCompat, "py-compat", false, "Enables support for legacy Python Minitor config. Will eventually be removed. (default: false)")
-	flag.IntVar(&MetricsPort, "metrics-port", MetricsPort, "The port that Prometheus metrics should be exported on, if enabled. (default: 8080)")
+	flag.IntVar(&MetricsPort, "metrics-port", MetricsPort, "The port that Prometheus metrics and healthchecks should be exported on, if enabled. (default: 8080)")
+	flag.BoolVar(&SelfMonitor, "self-monitor", false, "Enables self-monitoring. Export metrics rather than panic when alerts fail. (default: false)")
+
 	flag.Parse()
 
 	// Print version if flag is provided
@@ -115,8 +145,19 @@ func main() {
 	// Serve metrics exporter, if specified
 	if ExportMetrics {
 		slog.Infof("Exporting metrics to Prometheus on port %d", MetricsPort)
+		HandleMetrics()
+	}
 
-		go ServeMetrics()
+	if SelfMonitor {
+		slog.Infof("Starting healthcheck endpoint on port %d", MetricsPort)
+
+		HealthChecks = NewHealthCheckHandler(config.Monitors)
+
+		HandleHealthCheck()
+	}
+
+	if ExportMetrics || SelfMonitor {
+		go ServeMetricsAndHealth()
 	}
 
 	// Start main loop
