@@ -138,6 +138,10 @@ func main() {
 		return
 	}
 
+	if PyCompat {
+		slog.Warningf("Python compatibility mode is enabled. This will be removed in the next major release. Please update your configuration.")
+	}
+
 	// Load configuration
 	config, err := LoadConfig(*configPath)
 	slog.OnErrFatalf(err, "Error loading config: %v", err)
