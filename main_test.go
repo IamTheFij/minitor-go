@@ -121,17 +121,23 @@ func TestCheckMonitors(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		err := c.config.Init()
-		if err != nil {
-			t.Errorf("checkMonitors(%s): unexpected error reading config: %v", c.name, err)
-		}
+		c := c
 
-		err = checkMonitors(&c.config)
-		if err == nil && c.expectErr {
-			t.Errorf("checkMonitors(%s): Expected panic, the code did not panic", c.name)
-		} else if err != nil && !c.expectErr {
-			t.Errorf("checkMonitors(%s): Did not expect an error, but we got one anyway: %v", c.name, err)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := c.config.Init()
+			if err != nil {
+				t.Errorf("checkMonitors(%s): unexpected error reading config: %v", c.name, err)
+			}
+
+			err = checkMonitors(&c.config)
+			if err == nil && c.expectErr {
+				t.Errorf("checkMonitors(%s): Expected panic, the code did not panic", c.name)
+			} else if err != nil && !c.expectErr {
+				t.Errorf("checkMonitors(%s): Did not expect an error, but we got one anyway: %v", c.name, err)
+			}
+		})
 	}
 }
 
@@ -182,16 +188,22 @@ func TestFirstRunAlerts(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		err := c.config.Init()
-		if err != nil {
-			t.Errorf("sendFirstRunAlerts(%s): unexpected error reading config: %v", c.name, err)
-		}
+		c := c
 
-		err = sendStartupAlerts(&c.config, c.startupAlerts)
-		if err == nil && c.expectErr {
-			t.Errorf("sendFirstRunAlerts(%s): Expected error, the code did not error", c.name)
-		} else if err != nil && !c.expectErr {
-			t.Errorf("sendFirstRunAlerts(%s): Did not expect an error, but we got one anyway: %v", c.name, err)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			err := c.config.Init()
+			if err != nil {
+				t.Errorf("sendFirstRunAlerts(%s): unexpected error reading config: %v", c.name, err)
+			}
+
+			err = sendStartupAlerts(&c.config, c.startupAlerts)
+			if err == nil && c.expectErr {
+				t.Errorf("sendFirstRunAlerts(%s): Expected error, the code did not error", c.name)
+			} else if err != nil && !c.expectErr {
+				t.Errorf("sendFirstRunAlerts(%s): Did not expect an error, but we got one anyway: %v", c.name, err)
+			}
+		})
 	}
 }

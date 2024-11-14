@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"testing"
 )
 
@@ -17,15 +16,16 @@ func TestAlertIsValid(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		log.Printf("Testing case %s", c.name)
+		c := c
 
-		actual := c.alert.IsValid()
-		if actual != c.expected {
-			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expected, actual)
-			log.Printf("Case failed: %s", c.name)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
 
-		log.Println("-----")
+			actual := c.alert.IsValid()
+			if actual != c.expected {
+				t.Errorf("expected=%t actual=%t", c.expected, actual)
+			}
+		})
 	}
 }
 
@@ -91,27 +91,27 @@ func TestAlertSend(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		log.Printf("Testing case %s", c.name)
+		c := c
 
-		err := c.alert.BuildTemplates()
-		if err != nil {
-			t.Errorf("Send(%v output), error building templates: %v", c.name, err)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
 
-		output, err := c.alert.Send(c.notice)
-		hasErr := (err != nil)
+			err := c.alert.BuildTemplates()
+			if err != nil {
+				t.Errorf("Send(%v output), error building templates: %v", c.name, err)
+			}
 
-		if output != c.expectedOutput {
-			t.Errorf("Send(%v output), expected=%v actual=%v", c.name, c.expectedOutput, output)
-			log.Printf("Case failed: %s", c.name)
-		}
+			output, err := c.alert.Send(c.notice)
+			hasErr := (err != nil)
 
-		if hasErr != c.expectErr {
-			t.Errorf("Send(%v err), expected=%v actual=%v", c.name, "Err", err)
-			log.Printf("Case failed: %s", c.name)
-		}
+			if output != c.expectedOutput {
+				t.Errorf("Send(%v output), expected=%v actual=%v", c.name, c.expectedOutput, output)
+			}
 
-		log.Println("-----")
+			if hasErr != c.expectErr {
+				t.Errorf("Send(%v err), expected=%v actual=%v", c.name, "Err", err)
+			}
+		})
 	}
 }
 
@@ -123,8 +123,6 @@ func TestAlertSendNoTemplates(t *testing.T) {
 	if err == nil {
 		t.Errorf("Send(no template), expected=%v actual=%v", "Err", output)
 	}
-
-	log.Println("-----")
 }
 
 func TestAlertBuildTemplate(t *testing.T) {
@@ -139,15 +137,18 @@ func TestAlertBuildTemplate(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		log.Printf("Testing case %s", c.name)
-		err := c.alert.BuildTemplates()
-		hasErr := (err != nil)
+		c := c
 
-		if hasErr != c.expectErr {
-			t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expectErr, err)
-			log.Printf("Case failed: %s", c.name)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
 
-		log.Println("-----")
+			err := c.alert.BuildTemplates()
+			hasErr := (err != nil)
+
+			if hasErr != c.expectErr {
+				t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expectErr, err)
+			}
+
+		})
 	}
 }

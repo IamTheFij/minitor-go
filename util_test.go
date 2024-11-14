@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestUtilEqualSliceString(t *testing.T) {
 	cases := []struct {
@@ -21,12 +24,18 @@ func TestUtilEqualSliceString(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		actual := EqualSliceString(c.a, c.b)
-		if actual != c.expected {
-			t.Errorf(
-				"EqualSliceString(%v, %v), expected=%v actual=%v",
-				c.a, c.b, c.expected, actual,
-			)
-		}
+		c := c
+
+		t.Run(fmt.Sprintf("%v %v", c.a, c.b), func(t *testing.T) {
+			t.Parallel()
+
+			actual := EqualSliceString(c.a, c.b)
+			if actual != c.expected {
+				t.Errorf(
+					"EqualSliceString(%v, %v), expected=%v actual=%v",
+					c.a, c.b, c.expected, actual,
+				)
+			}
+		})
 	}
 }

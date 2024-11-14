@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"testing"
 	"time"
 )
@@ -23,19 +22,23 @@ func TestLoadConfig(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		log.Printf("Testing case %s", c.name)
-		_, err := LoadConfig(c.configPath)
-		hasErr := (err != nil)
+		c := c
 
-		if hasErr != c.expectErr {
-			t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectErr, err)
-			log.Printf("Case failed: %s", c.name)
-		}
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			_, err := LoadConfig(c.configPath)
+			hasErr := (err != nil)
+
+			if hasErr != c.expectErr {
+				t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectErr, err)
+			}
+		})
 	}
 }
 
 func TestIntervalParsing(t *testing.T) {
-	log.Printf("Testing case TestIntervalParsing")
+	t.Parallel()
 
 	config, err := LoadConfig("./test/valid-config.yml")
 	if err != nil {
@@ -58,22 +61,17 @@ func TestIntervalParsing(t *testing.T) {
 	if config.Monitors[1].CheckInterval != oneMinute {
 		t.Errorf("Incorrectly parsed seconds duration. expected=%v actual=%v", oneSecond, config.CheckInterval)
 	}
-
-	log.Println("-----")
 }
 
 // TestMultiLineConfig is a more complicated test stepping through the parsing
 // and execution of mutli-line strings presented in YAML
 func TestMultiLineConfig(t *testing.T) {
-	log.Println("Testing multi-line string config")
+	t.Parallel()
 
 	config, err := LoadConfig("./test/valid-verify-multi-line.yml")
 	if err != nil {
 		t.Fatalf("TestMultiLineConfig(load), expected=no_error actual=%v", err)
 	}
-
-	log.Println("-----")
-	log.Println("TestMultiLineConfig(parse > string)")
 
 	expected := "echo 'Some string with stuff'; echo \"<angle brackets>\"; exit 1\n"
 	actual := config.Monitors[0].Command.ShellCommand
@@ -85,9 +83,6 @@ func TestMultiLineConfig(t *testing.T) {
 		t.Logf("bytes expected=%v", []byte(expected))
 		t.Logf("bytes actual  =%v", []byte(actual))
 	}
-
-	log.Println("-----")
-	log.Println("TestMultiLineConfig(execute > string)")
 
 	_, notice := config.Monitors[0].Check()
 	if notice == nil {
@@ -105,9 +100,6 @@ func TestMultiLineConfig(t *testing.T) {
 		t.Logf("bytes actual  =%v", []byte(actual))
 	}
 
-	log.Println("-----")
-	log.Println("TestMultiLineConfig(parse | string)")
-
 	expected = "echo 'Some string with stuff'\necho '<angle brackets>'\n"
 	actual = config.Alerts["log_shell"].Command.ShellCommand
 
@@ -118,9 +110,6 @@ func TestMultiLineConfig(t *testing.T) {
 		t.Logf("bytes expected=%v", []byte(expected))
 		t.Logf("bytes actual  =%v", []byte(actual))
 	}
-
-	log.Println("-----")
-	log.Println("TestMultiLineConfig(execute | string)")
 
 	actual, err = config.Alerts["log_shell"].Send(AlertNotice{})
 	if err != nil {
