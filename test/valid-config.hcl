@@ -16,11 +16,11 @@ monitor "Command" {
 }
 
 monitor "Shell" {
-  shell_command = <<EOF
-  echo 'Some string with stuff';
-  echo 'another line';
-  echo $PATH;
-  exit 1
+  shell_command = <<-EOF
+    echo 'Some string with stuff'
+    echo 'another line'
+    echo $PATH
+    exit 1
   EOF
   alert_down = ["log_command", "log_shell"]
   alert_after = 5

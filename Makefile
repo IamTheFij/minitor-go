@@ -63,7 +63,7 @@ docker-build:
 
 .PHONY: docker-run
 docker-run: docker-build
-	docker run --rm -v $(shell pwd)/config.yml:/root/config.yml $(DOCKER_TAG)
+	docker run --rm -v $(shell pwd)/sample-config.hcl:/root/config.hcl $(DOCKER_TAG)
 
 ## Multi-arch targets
 $(TARGETS): $(GOFILES)

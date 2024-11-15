@@ -4,7 +4,7 @@ A minimal monitoring system
 
 ## What does it do?
 
-Minitor accepts a YAML configuration file with a set of commands to run and a set of alerts to execute when those commands fail. It is designed to be as simple as possible and relies on other command line tools to do checks and issue alerts.
+Minitor accepts an HCL configuration file with a set of commands to run and a set of alerts to execute when those commands fail. Minitor has a narow feature set and instead follows a principle to outsource to other command line tools when possible. Thus, it relies on other command line tools to do checks and issue alerts. To make getting started a bit easier, Minitor includes a few scripts to help with common tasks.
 
 ## But why?
 
@@ -17,7 +17,7 @@ I'm running a few small services and found Sensu, Consul, Nagios, etc. to all be
 Install and execute with:
 
 ```bash
-go get github.com/iamthefij/minitor-go
+go install github.com/iamthefij/minitor-go@latest
 minitor
 ```
 
@@ -27,7 +27,7 @@ If locally developing you can use:
 make run
 ```
 
-It will read the contents of `config.yml` and begin its loop. You could also run it directly and provide a new config file via the `-config` argument.
+It will read the contents of `sample-config.hcl` and begin its loop. You could also run it directly and provide a new config file via the `-config` argument.
 
 
 #### Docker
@@ -38,19 +38,19 @@ You can pull this repository directly from Docker:
 docker pull iamthefij/minitor-go:latest
 ```
 
-The Docker image uses a default `config.yml` that is copied from `sample-config.yml`. This won't really do anything for you, so when you run the Docker image, you should supply your own `config.yml` file:
+The Docker image uses a default `config.hcl` copied from `sample-config.hcl`. This won't really do anything for you, so when you run the Docker image, you should supply your own `config.hcl` file:
 
 ```bash
-docker run -v $PWD/config.yml:/app/config.yml iamthefij/minitor-go:latest
+docker run -v $PWD/sample-config.hcl:/app/config.hcl iamthefij/minitor-go:latest
 ```
 
 Images are provided for `amd64`, `arm`, and `arm64` architechtures.
 
-Timezone configuration for the container is set by passing the `TZ` env variable. Eg. `TZ=America/Los_Angeles`.
+You can configure the timezone for the container by passing a `TZ` env variable. Eg. `TZ=America/Los_Angeles`.
 
 ## Configuring
 
-In this repo, you can explore the `sample-config.yml` file for an example, but the general structure is as follows. It should be noted that environment variable interpolation happens on load of the YAML file.
+In this repo, you can explore the `sample-config.hcl` file for an example, but the general structure is as follows. It should be noted that environment variable interpolation happens on load of the HCL file.
 
 The global configurations are:
 
@@ -58,21 +58,34 @@ The global configurations are:
 |---|---|
 |`check_interval`|Maximum frequency to run checks for each monitor as duration, eg. 1m2s.|
 |`default_alert_after`|A default value used as an `alert_after` value for a monitor if not specified or 0.|
+|`default_alert_every`|A default value used as an `alert_every` value for a monitor if not specified.|
 |`default_alert_down`|Default down alerts to used by a monitor in case none are provided.|
 |`default_alert_up`|Default up alerts to used by a monitor in case none are provided.|
-|`monitors`|List of all monitors. Detailed description below|
-|`alerts`|List of all alerts. Detailed description below|
+|`monitor`|block listing monitors. Detailed description below|
+|`alert`|List of all alerts. Detailed description below|
 
 ### Monitors
 
-All monitors should be listed under `monitors`.
+Represent your monitors as blocks with a label indicating the name of the monitor.
+
+```hcl
+monitor "example" {
+  command = ["echo", "Hello, World!"]
+  alert_down = ["log"]
+  alert_up = ["log"]
+  check_interval = "1m"
+  alert_after = 1
+  alert_every = 0
+}
+```
 
 Each monitor allows the following configuration:
 
 |key|value|
 |---|---|
 |`name`|Name of the monitor running. This will show up in messages and logs.|
-|`command`|Specifies the command that should be executed, either in exec or shell form. This command's exit value will determine whether the check is successful|
+|`command`|A list of strings representing a command to be executed. This command's exit value will determine whether the check is successful. This value is mutually exclusive to `shell_command`|
+|`shell_command`|A single string that represents a shell command to be executed. This command's exit value will determine whether the check is successful. This value is mutually exclusive to `command`|
 |`alert_down`|A list of Alerts to be triggered when the monitor is in a "down" state|
 |`alert_up`|A list of Alerts to be triggered when the monitor moves to an "up" state|
 |`check_interval`|The interval at which this monitor should be checked. This must be greater than the global `check_interval` value|
@@ -81,13 +94,25 @@ Each monitor allows the following configuration:
 
 ### Alerts
 
-Alerts exist as objects keyed under `alerts`. Their key should be the name of the Alert. This is used in your monitor setup in `alert_down` and `alert_up`.
+Represent your alerts as blocks with a lable indicating the name of the alert. The name will be used in your monitor setup in `alert_down` and `alert_up`.
 
-Eachy alert allows the following configuration:
+```hcl
+monitor "example" {
+  command = ["false"]
+  alert_down = ["log"]
+}
+
+alert "log" {
+  shell_command = "echo '{{.MonitorName}} is down!'"
+}
+```
+
+Each alert allows the following configuration:
 
 |key|value|
 |---|---|
-|`command`|Specifies the command that should be executed, either in exec or shell form. This is the command that will be run when the alert is executed. This can be templated with environment variables or the variables shown in the table below|
+|`command`|Specifies the command that should be executed in exec form. This is the command that will be run when the alert is executed. This can be templated with environment variables or the variables shown in the table below. This value is mutually exclusive to `shell_command`|
+|`shell_command`|Specifies a shell command as a single string. This is the command that will be run when the alert is executed. This can be templated with environment variables or the variables shown in the table below. This value is mutually exclusive to `command`|
 
 Also, when alerts are executed, they will be passed through Go's format function with arguments for some attributes of the Monitor. The following monitor specific variables can be referenced using Go formatting syntax:
 
@@ -125,7 +150,7 @@ It's not the best feeling to find out your alerts are broken when you're expecti
 Eg.
 
 ```bash
-minitor -startup-alerts=log_down,log_up -config ./config.yml
+minitor -startup-alerts=log_down,log_up -config ./config.hcl
 ```
 
 ### Metrics
@@ -157,44 +182,3 @@ This is a reimplementation of [Minitor](https://git.iamthefij.com/iamthefij/mini
 Minitor is already a minimal monitoring tool. Python 3 was a quick way to get something live, but Python itself comes with a large footprint. Thus Go feels like a better fit for the project, longer term.
 
 Initial target is meant to be roughly compatible requiring only minor changes to configuration. Future iterations may diverge to take advantage of Go specific features.
-
-### Differences from Python version
-
-Templating for Alert messages has been updated. In the Python version, `str.format(...)` was used with certain keys passed in that could be used to format messages. In the Go version, we use a struct, `AlertNotice` defined in `alert.go` and the built in Go templating format. Eg.
-
-minitor-py:
-```yaml
-alerts:
-  log:
-    command: 'echo {monitor_name}'
-```
-
-minitor-go:
-```yaml
-alerts:
-  log:
-    command: 'echo {{.MonitorName}}'
-```
-
-Interval durations have changed from being an integer number of seconds to a duration string supported by Go, for example:
-
-minitor-py:
-```yaml
-check_interval: 90
-```
-
-minitor-go:
-```yaml
-check_interval: 1m30s
-```
-
-The `-py-compat` flag has been removed. Any existing Python oriented configuration needs to be migrated to the new templates.
-
-## Future
-
-Future, potentially breaking changes
-
-  - [ ] Consider value of templating vs injecting values into Env variables
-  - [ ] Async checking
-  - [ ] Revisit metrics and see if they all make sense
-  - [ ] Consider dropping `alert_up` and `alert_down` in favor of using Go templates that offer more control of messaging (Breaking)
