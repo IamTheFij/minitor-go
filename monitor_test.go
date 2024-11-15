@@ -1,22 +1,25 @@
-package main
+package main_test
 
 import (
+	"reflect"
 	"testing"
 	"time"
+
+	m "git.iamthefij.com/iamthefij/minitor-go"
 )
 
 // TestMonitorIsValid tests the Monitor.IsValid()
 func TestMonitorIsValid(t *testing.T) {
 	cases := []struct {
-		monitor  Monitor
+		monitor  m.Monitor
 		expected bool
 		name     string
 	}{
-		{Monitor{Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, true, "Command only"},
-		{Monitor{ShellCommand: "echo test", AlertDown: []string{"log"}}, true, "CommandShell only"},
-		{Monitor{Command: []string{"echo", "test"}}, false, "No AlertDown"},
-		{Monitor{AlertDown: []string{"log"}}, false, "No commands"},
-		{Monitor{Command: []string{"echo", "test"}, AlertDown: []string{"log"}, AlertAfter: Ptr(-1)}, false, "Invalid alert threshold, -1"},
+		{m.Monitor{AlertAfter: 1, Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, true, "Command only"},
+		{m.Monitor{AlertAfter: 1, ShellCommand: "echo test", AlertDown: []string{"log"}}, true, "CommandShell only"},
+		{m.Monitor{AlertAfter: 1, Command: []string{"echo", "test"}}, false, "No AlertDown"},
+		{m.Monitor{AlertAfter: 1, AlertDown: []string{"log"}}, false, "No commands"},
+		{m.Monitor{AlertAfter: -1, Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, false, "Invalid alert threshold, -1"},
 	}
 
 	for _, c := range cases {
@@ -35,75 +38,63 @@ func TestMonitorIsValid(t *testing.T) {
 
 // TestMonitorShouldCheck tests the Monitor.ShouldCheck()
 func TestMonitorShouldCheck(t *testing.T) {
-	timeNow := time.Now()
-	timeTenSecAgo := time.Now().Add(time.Second * -10)
-	timeTwentySecAgo := time.Now().Add(time.Second * -20)
-	fifteenSeconds := time.Second * 15
+	t.Parallel()
 
-	cases := []struct {
-		monitor  Monitor
-		expected bool
-		name     string
-	}{
-		{Monitor{}, true, "Empty"},
-		{Monitor{lastCheck: timeNow, CheckInterval: fifteenSeconds}, false, "Just checked"},
-		{Monitor{lastCheck: timeTenSecAgo, CheckInterval: fifteenSeconds}, false, "-10s"},
-		{Monitor{lastCheck: timeTwentySecAgo, CheckInterval: fifteenSeconds}, true, "-20s"},
+	// Create a monitor that should check every second and then verify it checks with some sleeps
+	monitor := m.Monitor{ShellCommand: "true", CheckInterval: time.Second}
+
+	if !monitor.ShouldCheck() {
+		t.Errorf("New monitor should be ready to check")
 	}
 
-	for _, c := range cases {
-		c := c
+	monitor.Check()
 
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
+	if monitor.ShouldCheck() {
+		t.Errorf("Monitor should not be ready to check after a check")
+	}
 
-			actual := c.monitor.ShouldCheck()
-			if actual != c.expected {
-				t.Errorf("ShouldCheck(%v), expected=%t actual=%t", c.name, c.expected, actual)
-			}
-		})
+	time.Sleep(time.Second)
+
+	if !monitor.ShouldCheck() {
+		t.Errorf("Monitor should be ready to check after a second")
 	}
 }
 
 // TestMonitorIsUp tests the Monitor.IsUp()
 func TestMonitorIsUp(t *testing.T) {
-	cases := []struct {
-		monitor  Monitor
-		expected bool
-		name     string
-	}{
-		{Monitor{}, true, "Empty"},
-		{Monitor{alertCount: 1}, false, "Has alert"},
-		{Monitor{alertCount: -1}, false, "Negative alerts"},
-		{Monitor{alertCount: 0}, true, "No alerts"},
+	t.Parallel()
+
+	// Creating a monitor that should alert after 2 failures. The monitor should be considered up until we reach two failed checks
+	monitor := m.Monitor{ShellCommand: "false", AlertAfter: 2}
+	if !monitor.IsUp() {
+		t.Errorf("New monitor should be considered up")
 	}
 
-	for _, c := range cases {
-		c := c
+	monitor.Check()
 
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
+	if !monitor.IsUp() {
+		t.Errorf("Monitor should be considered up with one failure and no alerts")
+	}
 
-			actual := c.monitor.IsUp()
-			if actual != c.expected {
-				t.Errorf("IsUp(%v), expected=%t actual=%t", c.name, c.expected, actual)
-			}
-		})
+	monitor.Check()
+
+	if monitor.IsUp() {
+		t.Errorf("Monitor should be considered down with one alert")
 	}
 }
 
 // TestMonitorGetAlertNames tests that proper alert names are returned
 func TestMonitorGetAlertNames(t *testing.T) {
 	cases := []struct {
-		monitor  Monitor
+		monitor  m.Monitor
 		up       bool
 		expected []string
 		name     string
 	}{
-		{Monitor{}, true, nil, "Empty up"},
-		{Monitor{}, false, nil, "Empty down"},
-		{Monitor{AlertUp: []string{"alert"}}, true, []string{"alert"}, "Return up"},
-		{Monitor{AlertDown: []string{"alert"}}, false, []string{"alert"}, "Return down"},
+		{m.Monitor{}, true, nil, "Empty up"},
+		{m.Monitor{}, false, nil, "Empty down"},
+		{m.Monitor{AlertUp: []string{"alert"}}, true, []string{"alert"}, "Return up"},
+		{m.Monitor{AlertDown: []string{"alert"}}, false, []string{"alert"}, "Return down"},
 	}
 
 	for _, c := range cases {
@@ -113,36 +104,8 @@ func TestMonitorGetAlertNames(t *testing.T) {
 			t.Parallel()
 
 			actual := c.monitor.GetAlertNames(c.up)
-			if !EqualSliceString(actual, c.expected) {
+			if !reflect.DeepEqual(actual, c.expected) {
 				t.Errorf("GetAlertNames(%v), expected=%v actual=%v", c.name, c.expected, actual)
-			}
-		})
-	}
-}
-
-// TestMonitorSuccess tests the Monitor.success()
-func TestMonitorSuccess(t *testing.T) {
-	cases := []struct {
-		monitor      Monitor
-		expectNotice bool
-		name         string
-	}{
-		{Monitor{}, false, "Empty"},
-		{Monitor{alertCount: 0}, false, "No alerts"},
-		{Monitor{alertCount: 1}, true, "Has alert"},
-	}
-
-	for _, c := range cases {
-		c := c
-
-		t.Run(c.name, func(t *testing.T) {
-			t.Parallel()
-
-			notice := c.monitor.success()
-			hasNotice := (notice != nil)
-
-			if hasNotice != c.expectNotice {
-				t.Errorf("success(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
 			}
 		})
 	}
@@ -151,19 +114,20 @@ func TestMonitorSuccess(t *testing.T) {
 // TestMonitorFailureAlertAfter tests that alerts will not trigger until
 // hitting the threshold provided by AlertAfter
 func TestMonitorFailureAlertAfter(t *testing.T) {
-	var alertEvery int = 1
+	var alertEveryOne int = 1
 
 	cases := []struct {
-		monitor      Monitor
+		monitor      m.Monitor
+		numChecks    int
 		expectNotice bool
 		name         string
 	}{
-		{Monitor{AlertAfter: Ptr(1)}, true, "Empty"}, // Defaults to true because and AlertEvery default to 0
-		{Monitor{failureCount: 0, AlertAfter: Ptr(1), AlertEvery: &alertEvery}, true, "Alert after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: Ptr(1), AlertEvery: &alertEvery}, true, "Alert after 1: second failure"},
-		{Monitor{failureCount: 0, AlertAfter: Ptr(20), AlertEvery: &alertEvery}, false, "Alert after 20: first failure"},
-		{Monitor{failureCount: 19, AlertAfter: Ptr(20), AlertEvery: &alertEvery}, true, "Alert after 20: 20th failure"},
-		{Monitor{failureCount: 20, AlertAfter: Ptr(20), AlertEvery: &alertEvery}, true, "Alert after 20: 21st failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1}, 1, true, "Empty After 1"}, // Defaults to true because and AlertEvery default to 0
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: &alertEveryOne}, 1, true, "Alert after 1: first failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: &alertEveryOne}, 2, true, "Alert after 1: second failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 20, AlertEvery: &alertEveryOne}, 1, false, "Alert after 20: first failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 20, AlertEvery: &alertEveryOne}, 20, true, "Alert after 20: 20th failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 20, AlertEvery: &alertEveryOne}, 21, true, "Alert after 20: 21st failure"},
 	}
 
 	for _, c := range cases {
@@ -172,8 +136,12 @@ func TestMonitorFailureAlertAfter(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			notice := c.monitor.failure()
-			hasNotice := (notice != nil)
+			hasNotice := false
+
+			for i := 0; i < c.numChecks; i++ {
+				_, notice := c.monitor.Check()
+				hasNotice = (notice != nil)
+			}
 
 			if hasNotice != c.expectNotice {
 				t.Errorf("failure(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
@@ -185,39 +153,18 @@ func TestMonitorFailureAlertAfter(t *testing.T) {
 // TestMonitorFailureAlertEvery tests that alerts will trigger
 // on the expected intervals
 func TestMonitorFailureAlertEvery(t *testing.T) {
-	var alertEvery0, alertEvery1, alertEvery2 int
-	alertEvery0 = 0
-	alertEvery1 = 1
-	alertEvery2 = 2
-
 	cases := []struct {
-		monitor      Monitor
-		expectNotice bool
-		name         string
+		monitor        m.Monitor
+		expectedNotice []bool
+		name           string
 	}{
-		/*
-			TODO: Actually found a bug in original implementation. There is an inconsistency in the way AlertAfter is treated.
-			For "First alert only" (ie. AlertEvery=0), it is the number of failures to ignore before alerting, so AlertAfter=1
-			will ignore the first failure and alert on the second failure
-			For other intervals (ie. AlertEvery=1), it is essentially indexed on one. Essentially making AlertAfter=1 trigger
-			on the first failure.
-
-			For usabilty, this should be consistent. Consistent with what though? minitor-py? Or itself? Dun dun duuuunnnnn!
-		*/
-		{Monitor{AlertAfter: Ptr(1)}, true, "Empty"}, // Defaults to true because AlertAfter and AlertEvery default to nil
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1}, []bool{true}, "No AlertEvery set"}, // Defaults to true because AlertAfter and AlertEvery default to nil
 		// Alert first time only, after 1
-		{Monitor{failureCount: 0, AlertAfter: Ptr(1), AlertEvery: &alertEvery0}, true, "Alert first time only after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: Ptr(1), AlertEvery: &alertEvery0}, false, "Alert first time only after 1: second failure"},
-		{Monitor{failureCount: 2, AlertAfter: Ptr(1), AlertEvery: &alertEvery0}, false, "Alert first time only after 1: third failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: Ptr(0)}, []bool{true, false, false}, "Alert first time only after 1"},
 		// Alert every time, after 1
-		{Monitor{failureCount: 0, AlertAfter: Ptr(1), AlertEvery: &alertEvery1}, true, "Alert every time after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: Ptr(1), AlertEvery: &alertEvery1}, true, "Alert every time after 1: second failure"},
-		{Monitor{failureCount: 2, AlertAfter: Ptr(1), AlertEvery: &alertEvery1}, true, "Alert every time after 1: third failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: Ptr(1)}, []bool{true, true, true}, "Alert every time after 1"},
 		// Alert every other time, after 1
-		{Monitor{failureCount: 0, AlertAfter: Ptr(1), AlertEvery: &alertEvery2}, true, "Alert every other time after 1: first failure"},
-		{Monitor{failureCount: 1, AlertAfter: Ptr(1), AlertEvery: &alertEvery2}, false, "Alert every other time after 1: second failure"},
-		{Monitor{failureCount: 2, AlertAfter: Ptr(1), AlertEvery: &alertEvery2}, true, "Alert every other time after 1: third failure"},
-		{Monitor{failureCount: 3, AlertAfter: Ptr(1), AlertEvery: &alertEvery2}, false, "Alert every other time after 1: fourth failure"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: Ptr(2)}, []bool{true, false, true, false}, "Alert every other time after 1"},
 	}
 
 	for _, c := range cases {
@@ -226,11 +173,13 @@ func TestMonitorFailureAlertEvery(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			notice := c.monitor.failure()
-			hasNotice := (notice != nil)
+			for i, expectNotice := range c.expectedNotice {
+				_, notice := c.monitor.Check()
+				hasNotice := (notice != nil)
 
-			if hasNotice != c.expectNotice {
-				t.Errorf("failure(%v), expected=%t actual=%t", c.name, c.expectNotice, hasNotice)
+				if hasNotice != expectNotice {
+					t.Errorf("failed %s check %d: expected=%t actual=%t", c.name, i, expectNotice, hasNotice)
+				}
 			}
 		})
 	}
@@ -257,12 +206,12 @@ func TestMonitorFailureExponential(t *testing.T) {
 
 	// Unlike previous tests, this one requires a static Monitor with repeated
 	// calls to the failure method
-	monitor := Monitor{failureCount: 0, AlertAfter: Ptr(1), AlertEvery: &alertEveryExp}
+	monitor := m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: &alertEveryExp}
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			// NOTE: These tests are not parallel because they rely on the state of the Monitor
-			notice := monitor.failure()
+			_, notice := monitor.Check()
 			hasNotice := (notice != nil)
 
 			if hasNotice != c.expectNotice {
@@ -281,27 +230,27 @@ func TestMonitorCheck(t *testing.T) {
 	}
 
 	cases := []struct {
-		monitor Monitor
+		monitor m.Monitor
 		expect  expected
 		name    string
 	}{
 		{
-			Monitor{Command: []string{"echo", "success"}},
+			m.Monitor{AlertAfter: 1, Command: []string{"echo", "success"}},
 			expected{isSuccess: true, hasNotice: false, lastOutput: "success\n"},
 			"Test successful command",
 		},
 		{
-			Monitor{ShellCommand: "echo success"},
+			m.Monitor{AlertAfter: 1, ShellCommand: "echo success"},
 			expected{isSuccess: true, hasNotice: false, lastOutput: "success\n"},
 			"Test successful command shell",
 		},
 		{
-			Monitor{Command: []string{"total", "failure"}},
+			m.Monitor{AlertAfter: 1, Command: []string{"total", "failure"}},
 			expected{isSuccess: false, hasNotice: true, lastOutput: ""},
 			"Test failed command",
 		},
 		{
-			Monitor{ShellCommand: "false"},
+			m.Monitor{AlertAfter: 1, ShellCommand: "false"},
 			expected{isSuccess: false, hasNotice: true, lastOutput: ""},
 			"Test failed command shell",
 		},
@@ -323,7 +272,7 @@ func TestMonitorCheck(t *testing.T) {
 				t.Errorf("Check(%v) (notice), expected=%t actual=%t", c.name, c.expect.hasNotice, hasNotice)
 			}
 
-			lastOutput := c.monitor.lastOutput
+			lastOutput := c.monitor.LastOutput()
 			if lastOutput != c.expect.lastOutput {
 				t.Errorf("Check(%v) (output), expected=%v actual=%v", c.name, c.expect.lastOutput, lastOutput)
 			}

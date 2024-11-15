@@ -1,7 +1,9 @@
-package main
+package main_test
 
 import (
 	"testing"
+
+	m "git.iamthefij.com/iamthefij/minitor-go"
 )
 
 func TestLoadConfig(t *testing.T) {
@@ -11,12 +13,11 @@ func TestLoadConfig(t *testing.T) {
 		name       string
 	}{
 		{"./test/does-not-exist", true, "Invalid config path"},
-		// {"./test/invalid-config-missing-alerts.yml", true, "Invalid config missing alerts"},
-		// {"./test/invalid-config-type.yml", true, "Invalid config type for key"},
-		// {"./test/invalid-config-unknown-alert.yml", true, "Invalid config unknown alert"},
-		// {"./test/valid-config-default-values.yml", false, "Valid config file with default values"},
+		{"./test/invalid-config-missing-alerts.hcl", true, "Invalid config missing alerts"},
+		{"./test/invalid-config-type.hcl", true, "Invalid config type for key"},
+		{"./test/invalid-config-unknown-alert.hcl", true, "Invalid config unknown alert"},
+		{"./test/valid-config-default-values.hcl", false, "Valid config file with default values"},
 		{"./test/valid-config.hcl", false, "Valid config file"},
-		// {"./test/valid-default-log-alert.yml", true, "Invalid config file no log alert"},
 	}
 	for _, c := range cases {
 		c := c
@@ -24,7 +25,7 @@ func TestLoadConfig(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			_, err := LoadConfig(c.configPath)
+			_, err := m.LoadConfig(c.configPath)
 			hasErr := (err != nil)
 
 			if hasErr != c.expectErr {
@@ -39,7 +40,7 @@ func TestLoadConfig(t *testing.T) {
 func TestMultiLineConfig(t *testing.T) {
 	t.Parallel()
 
-	config, err := LoadConfig("./test/valid-verify-multi-line.hcl")
+	config, err := m.LoadConfig("./test/valid-verify-multi-line.hcl")
 	if err != nil {
 		t.Fatalf("TestMultiLineConfig(load), expected=no_error actual=%v", err)
 	}
@@ -87,7 +88,7 @@ func TestMultiLineConfig(t *testing.T) {
 		t.Logf("bytes actual  =%v", []byte(actual))
 	}
 
-	actual, err = alert.Send(AlertNotice{})
+	actual, err = alert.Send(m.AlertNotice{})
 	if err != nil {
 		t.Errorf("Execution of alert failed")
 	}

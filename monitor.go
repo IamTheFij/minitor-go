@@ -15,7 +15,7 @@ type Monitor struct { //nolint:maligned
 	CheckInterval    time.Duration
 
 	Name         string   `hcl:"name,label"`
-	AlertAfter   *int     `hcl:"alert_after,optional"`
+	AlertAfter   int      `hcl:"alert_after,optional"`
 	AlertEvery   *int     `hcl:"alert_every,optional"`
 	AlertDown    []string `hcl:"alert_down,optional"`
 	AlertUp      []string `hcl:"alert_up,optional"`
@@ -34,9 +34,10 @@ type Monitor struct { //nolint:maligned
 // IsValid returns a boolean indicating if the Monitor has been correctly
 // configured
 func (monitor Monitor) IsValid() bool {
+	// TODO: Refactor and return an error containing more information on what was invalid
 	hasCommand := len(monitor.Command) > 0
 	hasShellCommand := monitor.ShellCommand != ""
-	hasValidAlertAfter := monitor.GetAlertAfter() > 0
+	hasValidAlertAfter := monitor.AlertAfter > 0
 	hasAlertDown := len(monitor.AlertDown) > 0
 
 	hasAtLeastOneCommand := hasCommand || hasShellCommand
@@ -46,6 +47,10 @@ func (monitor Monitor) IsValid() bool {
 		hasAtMostOneCommand &&
 		hasValidAlertAfter &&
 		hasAlertDown
+}
+
+func (monitor Monitor) LastOutput() string {
+	return monitor.lastOutput
 }
 
 // ShouldCheck returns a boolean indicating if the Monitor is ready to be
@@ -126,20 +131,20 @@ func (monitor *Monitor) success() (notice *AlertNotice) {
 func (monitor *Monitor) failure() (notice *AlertNotice) {
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
-	if monitor.failureCount < monitor.GetAlertAfter() {
+	if monitor.failureCount < monitor.AlertAfter {
 		slog.Debugf(
 			"%s failed but did not hit minimum failures. "+
 				"Count: %v alert after: %v",
 			monitor.Name,
 			monitor.failureCount,
-			monitor.GetAlertAfter(),
+			monitor.AlertAfter,
 		)
 
 		return
 	}
 
 	// Take number of failures after minimum
-	failureCount := (monitor.failureCount - monitor.GetAlertAfter())
+	failureCount := (monitor.failureCount - monitor.AlertAfter)
 
 	// Use alert cadence to determine if we should alert
 	switch {
@@ -166,15 +171,6 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	}
 
 	return notice
-}
-
-// GetAlertAfter will get or return the default alert after value
-func (monitor Monitor) GetAlertAfter() int {
-	if monitor.AlertAfter == nil {
-		return 1
-	}
-
-	return *monitor.AlertAfter
 }
 
 // GetAlertNames gives a list of alert names for a given monitor status

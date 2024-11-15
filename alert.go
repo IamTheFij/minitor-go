@@ -162,14 +162,3 @@ func (alert Alert) Send(notice AlertNotice) (outputStr string, err error) {
 
 	return outputStr, err
 }
-
-// NewLogAlert creates an alert that does basic logging using echo
-func NewLogAlert() *Alert {
-	return &Alert{
-		Name: "log",
-		Command: []string{
-			"echo",
-			"{{.MonitorName}} {{if .IsUp}}has recovered{{else}}check has failed {{.FailureCount}} times{{end}}",
-		},
-	}
-}

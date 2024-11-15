@@ -24,7 +24,7 @@ var (
 	errUnknownAlert = errors.New("unknown alert")
 )
 
-func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) error {
+func SendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) error {
 	slog.Debugf("Received an alert notice from %s", alertNotice.MonitorName)
 	alertNames := monitor.GetAlertNames(alertNotice.IsUp)
 
@@ -65,7 +65,7 @@ func sendAlerts(config *Config, monitor *Monitor, alertNotice *AlertNotice) erro
 	return nil
 }
 
-func checkMonitors(config *Config) error {
+func CheckMonitors(config *Config) error {
 	// TODO: Run this in goroutines and capture exceptions
 	for _, monitor := range config.Monitors {
 		if monitor.ShouldCheck() {
@@ -77,7 +77,7 @@ func checkMonitors(config *Config) error {
 			Metrics.CountCheck(monitor.Name, success, monitor.LastCheckMilliseconds(), hasAlert)
 
 			if alertNotice != nil {
-				err := sendAlerts(config, monitor, alertNotice)
+				err := SendAlerts(config, monitor, alertNotice)
 				// If there was an error in sending an alert, exit early and bubble it up
 				if err != nil {
 					return err
@@ -89,7 +89,7 @@ func checkMonitors(config *Config) error {
 	return nil
 }
 
-func sendStartupAlerts(config *Config, alertNames []string) error {
+func SendStartupAlerts(config *Config, alertNames []string) error {
 	for _, alertName := range alertNames {
 		var err error
 
@@ -148,14 +148,14 @@ func main() {
 	if *startupAlerts != "" {
 		alertNames := strings.Split(*startupAlerts, ",")
 
-		err = sendStartupAlerts(&config, alertNames)
+		err = SendStartupAlerts(&config, alertNames)
 
 		slog.OnErrPanicf(err, "Error running startup alerts")
 	}
 
 	// Start main loop
 	for {
-		err = checkMonitors(&config)
+		err = CheckMonitors(&config)
 		slog.OnErrPanicf(err, "Error checking monitors")
 
 		time.Sleep(config.CheckInterval)
