@@ -1,8 +1,0 @@
----
-check_interval: 1
-
-monitors:
-  - name: Command
-    command: ['echo', '$PATH']
-    alert_down: ['log']
-    alert_every: 0

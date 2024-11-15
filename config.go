@@ -113,6 +113,8 @@ func (config *Config) Init() (err error) {
 	}
 
 	for _, monitor := range config.Monitors {
+		// TODO: Move this to a Monitor.Init() method
+
 		// Parse the check_interval string into a time.Duration
 		if monitor.CheckIntervalStr != nil {
 			monitor.CheckInterval, err = time.ParseDuration(*monitor.CheckIntervalStr)
@@ -122,8 +124,10 @@ func (config *Config) Init() (err error) {
 		}
 
 		// Set default values for monitor alerts
-		if monitor.AlertAfter == nil {
-			monitor.AlertAfter = config.DefaultAlertAfter
+		if monitor.AlertAfter == 0 && config.DefaultAlertAfter != nil {
+			monitor.AlertAfter = *config.DefaultAlertAfter
+		} else if monitor.AlertAfter == 0 {
+			monitor.AlertAfter = 1
 		}
 
 		if monitor.AlertEvery == nil {

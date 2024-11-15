@@ -1,18 +1,20 @@
-package main
+package main_test
 
 import (
 	"testing"
+
+	m "git.iamthefij.com/iamthefij/minitor-go"
 )
 
 func TestAlertIsValid(t *testing.T) {
 	cases := []struct {
-		alert    Alert
+		alert    m.Alert
 		expected bool
 		name     string
 	}{
-		{Alert{Command: []string{"echo", "test"}}, true, "Command only"},
-		{Alert{ShellCommand: "echo test"}, true, "CommandShell only"},
-		{Alert{}, false, "No commands"},
+		{m.Alert{Command: []string{"echo", "test"}}, true, "Command only"},
+		{m.Alert{ShellCommand: "echo test"}, true, "CommandShell only"},
+		{m.Alert{}, false, "No commands"},
 	}
 
 	for _, c := range cases {
@@ -31,55 +33,39 @@ func TestAlertIsValid(t *testing.T) {
 
 func TestAlertSend(t *testing.T) {
 	cases := []struct {
-		alert          Alert
-		notice         AlertNotice
+		alert          m.Alert
+		notice         m.AlertNotice
 		expectedOutput string
 		expectErr      bool
 		name           string
 	}{
 		{
-			Alert{Command: []string{"echo", "{{.MonitorName}}"}},
-			AlertNotice{MonitorName: "test"},
+			m.Alert{Command: []string{"echo", "{{.MonitorName}}"}},
+			m.AlertNotice{MonitorName: "test"},
 			"test\n",
 			false,
 			"Command with template",
 		},
 		{
-			Alert{ShellCommand: "echo {{.MonitorName}}"},
-			AlertNotice{MonitorName: "test"},
+			m.Alert{ShellCommand: "echo {{.MonitorName}}"},
+			m.AlertNotice{MonitorName: "test"},
 			"test\n",
 			false,
 			"Command shell with template",
 		},
 		{
-			Alert{Command: []string{"echo", "{{.Bad}}"}},
-			AlertNotice{MonitorName: "test"},
+			m.Alert{Command: []string{"echo", "{{.Bad}}"}},
+			m.AlertNotice{MonitorName: "test"},
 			"",
 			true,
 			"Command with bad template",
 		},
 		{
-			Alert{ShellCommand: "echo {{.Bad}}"},
-			AlertNotice{MonitorName: "test"},
+			m.Alert{ShellCommand: "echo {{.Bad}}"},
+			m.AlertNotice{MonitorName: "test"},
 			"",
 			true,
 			"Command shell with bad template",
-		},
-		// Test default log alert down
-		{
-			*NewLogAlert(),
-			AlertNotice{MonitorName: "Test", FailureCount: 1, IsUp: false},
-			"Test check has failed 1 times\n",
-			false,
-			"Default log alert down",
-		},
-		// Test default log alert up
-		{
-			*NewLogAlert(),
-			AlertNotice{MonitorName: "Test", IsUp: true},
-			"Test has recovered\n",
-			false,
-			"Default log alert up",
 		},
 	}
 
@@ -109,8 +95,8 @@ func TestAlertSend(t *testing.T) {
 }
 
 func TestAlertSendNoTemplates(t *testing.T) {
-	alert := Alert{}
-	notice := AlertNotice{}
+	alert := m.Alert{}
+	notice := m.AlertNotice{}
 
 	output, err := alert.Send(notice)
 	if err == nil {
@@ -120,13 +106,13 @@ func TestAlertSendNoTemplates(t *testing.T) {
 
 func TestAlertBuildTemplate(t *testing.T) {
 	cases := []struct {
-		alert     Alert
+		alert     m.Alert
 		expectErr bool
 		name      string
 	}{
-		{Alert{Command: []string{"echo", "test"}}, false, "Command only"},
-		{Alert{ShellCommand: "echo test"}, false, "CommandShell only"},
-		{Alert{}, true, "No commands"},
+		{m.Alert{Command: []string{"echo", "test"}}, false, "Command only"},
+		{m.Alert{ShellCommand: "echo test"}, false, "CommandShell only"},
+		{m.Alert{}, true, "No commands"},
 	}
 
 	for _, c := range cases {

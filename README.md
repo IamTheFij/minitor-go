@@ -76,7 +76,7 @@ Each monitor allows the following configuration:
 |`alert_down`|A list of Alerts to be triggered when the monitor is in a "down" state|
 |`alert_up`|A list of Alerts to be triggered when the monitor moves to an "up" state|
 |`check_interval`|The interval at which this monitor should be checked. This must be greater than the global `check_interval` value|
-|`alert_after`|Allows specifying the number of failed checks before an alert should be triggered|
+|`alert_after`|Allows specifying the number of failed checks before an alert should be triggered. A value of 1 will start sending alerts after the first failure.|
 |`alert_every`|Allows specifying how often an alert should be retriggered. There are a few magic numbers here. Defaults to `-1` for an exponential backoff. Setting to `0` disables re-alerting. Positive values will allow retriggering after the specified number of checks|
 
 ### Alerts

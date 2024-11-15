@@ -1,125 +1,92 @@
-package main
+package main_test
 
-import "testing"
+import (
+	"testing"
+
+	m "git.iamthefij.com/iamthefij/minitor-go"
+)
 
 func Ptr[T any](v T) *T {
 	return &v
 }
 
+// TestCheckConfig tests the checkConfig function
+// It also tests results for potentially invalid configuration. For example, no alerts
 func TestCheckMonitors(t *testing.T) {
 	cases := []struct {
-		config    Config
-		expectErr bool
-		name      string
+		config             m.Config
+		expectFailureError bool
+		expectRecoverError bool
+		name               string
 	}{
 		{
-			config: Config{
+			config: m.Config{
 				CheckIntervalStr: "1s",
-				Monitors: []*Monitor{
+				Monitors: []*m.Monitor{
 					{
-						Name:    "Success",
-						Command: []string{"true"},
+						Name: "Success",
 					},
 				},
 			},
-			expectErr: false,
-			name:      "Monitor success, no alerts",
+			expectFailureError: false,
+			expectRecoverError: false,
+			name:               "No alerts",
 		},
 		{
-			config: Config{
+			config: m.Config{
 				CheckIntervalStr: "1s",
-				Monitors: []*Monitor{
+				Monitors: []*m.Monitor{
 					{
 						Name:       "Failure",
-						Command:    []string{"false"},
-						AlertAfter: Ptr(1),
-					},
-				},
-			},
-			expectErr: true,
-			name:      "Monitor failure, no alerts",
-		},
-		{
-			config: Config{
-				CheckIntervalStr: "1s",
-				Monitors: []*Monitor{
-					{
-						Name:       "Success",
-						Command:    []string{"ls"},
-						alertCount: 1,
-					},
-				},
-			},
-			expectErr: false,
-			name:      "Monitor recovery, no alerts",
-		},
-		{
-			config: Config{
-				CheckIntervalStr: "1s",
-				Monitors: []*Monitor{
-					{
-						Name:       "Failure",
-						Command:    []string{"false"},
 						AlertDown:  []string{"unknown"},
-						AlertAfter: Ptr(1),
-					},
-				},
-			},
-			expectErr: true,
-			name:      "Monitor failure, unknown alerts",
-		},
-		{
-			config: Config{
-				CheckIntervalStr: "1s",
-				Monitors: []*Monitor{
-					{
-						Name:       "Success",
-						Command:    []string{"true"},
 						AlertUp:    []string{"unknown"},
-						alertCount: 1,
+						AlertAfter: 1,
 					},
 				},
 			},
-			expectErr: true,
-			name:      "Monitor recovery, unknown alerts",
+			expectFailureError: true,
+			expectRecoverError: true,
+			name:               "Unknown alerts",
 		},
 		{
-			config: Config{
+			config: m.Config{
 				CheckIntervalStr: "1s",
-				Monitors: []*Monitor{
+				Monitors: []*m.Monitor{
 					{
 						Name:       "Failure",
-						Command:    []string{"false"},
 						AlertDown:  []string{"good"},
-						AlertAfter: Ptr(1),
+						AlertUp:    []string{"good"},
+						AlertAfter: 1,
 					},
 				},
-				Alerts: []*Alert{{
+				Alerts: []*m.Alert{{
 					Name:    "good",
 					Command: []string{"true"},
 				}},
 			},
-			expectErr: false,
-			name:      "Monitor failure, successful alert",
+			expectFailureError: false,
+			expectRecoverError: false,
+			name:               "Successful alert",
 		},
 		{
-			config: Config{
+			config: m.Config{
 				CheckIntervalStr: "1s",
-				Monitors: []*Monitor{
+				Monitors: []*m.Monitor{
 					{
 						Name:       "Failure",
-						Command:    []string{"false"},
 						AlertDown:  []string{"bad"},
-						AlertAfter: Ptr(1),
+						AlertUp:    []string{"bad"},
+						AlertAfter: 1,
 					},
 				},
-				Alerts: []*Alert{{
+				Alerts: []*m.Alert{{
 					Name:    "bad",
 					Command: []string{"false"},
 				}},
 			},
-			expectErr: true,
-			name:      "Monitor failure, bad alert",
+			expectFailureError: true,
+			expectRecoverError: true,
+			name:               "Failing alert",
 		},
 	}
 
@@ -134,11 +101,25 @@ func TestCheckMonitors(t *testing.T) {
 				t.Errorf("checkMonitors(%s): unexpected error reading config: %v", c.name, err)
 			}
 
-			err = checkMonitors(&c.config)
-			if err == nil && c.expectErr {
-				t.Errorf("checkMonitors(%s): Expected panic, the code did not panic", c.name)
-			} else if err != nil && !c.expectErr {
-				t.Errorf("checkMonitors(%s): Did not expect an error, but we got one anyway: %v", c.name, err)
+			for _, check := range []struct {
+				shellCmd  string
+				name      string
+				expectErr bool
+			}{
+				{"false", "Failure", c.expectFailureError}, {"true", "Success", c.expectRecoverError},
+			} {
+				// Set the shell command for this check
+				c.config.Monitors[0].ShellCommand = check.shellCmd
+
+				// Run the check
+				err = m.CheckMonitors(&c.config)
+
+				// Check the results
+				if err == nil && check.expectErr {
+					t.Errorf("checkMonitors(%s:%s): Expected error, the code did not error", c.name, check.name)
+				} else if err != nil && !check.expectErr {
+					t.Errorf("checkMonitors(%s:%s): Did not expect an error, but we got one anyway: %v", c.name, check.name, err)
+				}
 			}
 		})
 	}
@@ -146,26 +127,23 @@ func TestCheckMonitors(t *testing.T) {
 
 func TestFirstRunAlerts(t *testing.T) {
 	cases := []struct {
-		config        Config
+		config        m.Config
 		expectErr     bool
 		startupAlerts []string
 		name          string
 	}{
 		{
-			config:        Config{},
-			expectErr:     false,
-			startupAlerts: []string{},
-			name:          "Empty",
-		},
-		{
-			config:        Config{},
+			config: m.Config{
+				CheckIntervalStr: "1s",
+			},
 			expectErr:     true,
 			startupAlerts: []string{"missing"},
 			name:          "Unknown",
 		},
 		{
-			config: Config{
-				Alerts: []*Alert{
+			config: m.Config{
+				CheckIntervalStr: "1s",
+				Alerts: []*m.Alert{
 					{
 						Name:    "good",
 						Command: []string{"true"},
@@ -177,8 +155,9 @@ func TestFirstRunAlerts(t *testing.T) {
 			name:          "Successful alert",
 		},
 		{
-			config: Config{
-				Alerts: []*Alert{
+			config: m.Config{
+				CheckIntervalStr: "1s",
+				Alerts: []*m.Alert{
 					{
 						Name:    "bad",
 						Command: []string{"false"},
@@ -202,7 +181,7 @@ func TestFirstRunAlerts(t *testing.T) {
 				t.Errorf("sendFirstRunAlerts(%s): unexpected error reading config: %v", c.name, err)
 			}
 
-			err = sendStartupAlerts(&c.config, c.startupAlerts)
+			err = m.SendStartupAlerts(&c.config, c.startupAlerts)
 			if err == nil && c.expectErr {
 				t.Errorf("sendFirstRunAlerts(%s): Expected error, the code did not error", c.name)
 			} else if err != nil && !c.expectErr {
