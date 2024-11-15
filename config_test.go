@@ -45,60 +45,59 @@ func TestMultiLineConfig(t *testing.T) {
 		t.Fatalf("TestMultiLineConfig(load), expected=no_error actual=%v", err)
 	}
 
-	expected := "echo 'Some string with stuff';\necho \"<angle brackets>\";\nexit 1\n"
-	actual := config.Monitors[0].ShellCommand
+	t.Run("Test Monitor with Indented Multi-Line String", func(t *testing.T) {
+		// Verify indented heredoc is as expected
+		expected := "echo 'Some string with stuff'\necho \"<angle brackets>\"\nexit 1\n"
+		actual := config.Monitors[0].ShellCommand
 
-	if expected != actual {
-		t.Errorf("TestMultiLineConfig(>) failed")
-		t.Logf("string expected=`%v`", expected)
-		t.Logf("string actual  =`%v`", actual)
-		t.Logf("bytes expected=%v", []byte(expected))
-		t.Logf("bytes actual  =%v", []byte(actual))
-	}
+		if expected != actual {
+			t.Error("Heredoc mismatch")
+			t.Errorf("string expected=`%v`", expected)
+			t.Errorf("string actual  =`%v`", actual)
+		}
 
-	_, notice := config.Monitors[0].Check()
-	if notice == nil {
-		t.Fatal("Did not receive an alert notice")
-	}
+		// Run the monitor and verify the output
+		_, notice := config.Monitors[0].Check()
+		if notice == nil {
+			t.Fatal("Did not receive an alert notice and should have")
+		}
 
-	expected = "Some string with stuff\n<angle brackets>\n"
-	actual = notice.LastCheckOutput
+		// Verify the output of the monitor is as expected
+		expected = "Some string with stuff\n<angle brackets>\n"
+		actual = notice.LastCheckOutput
 
-	if expected != actual {
-		t.Errorf("TestMultiLineConfig(execute > string) check failed")
-		t.Logf("string expected=`%v`", expected)
-		t.Logf("string actual  =`%v`", actual)
-		t.Logf("bytes expected=%v", []byte(expected))
-		t.Logf("bytes actual  =%v", []byte(actual))
-	}
+		if expected != actual {
+			t.Error("Output mismatch")
+			t.Errorf("string expected=`%v`", expected)
+			t.Errorf("string actual  =`%v`", actual)
+		}
+	})
 
-	expected = "echo 'Some string with stuff'\necho '<angle brackets>'\n"
+	t.Run("Test Alert with Multi-Line String", func(t *testing.T) {
+		alert, ok := config.GetAlert("log_shell")
+		if !ok {
+			t.Fatal("Could not find expected alert 'log_shell'")
+		}
 
-	alert, ok := config.GetAlert("log_shell")
-	if !ok {
-		t.Fatal("Could not find expected alert 'log_shell'")
-	}
+		expected := "    echo 'Some string with stuff'\n    echo '<angle brackets>'\n"
+		actual := alert.ShellCommand
 
-	actual = alert.ShellCommand
-	if expected != actual {
-		t.Errorf("TestMultiLineConfig(|) failed")
-		t.Logf("string expected=`%v`", expected)
-		t.Logf("string actual  =`%v`", actual)
-		t.Logf("bytes expected=%v", []byte(expected))
-		t.Logf("bytes actual  =%v", []byte(actual))
-	}
+		if expected != actual {
+			t.Error("Heredoc mismatch")
+			t.Errorf("string expected=`%v`", expected)
+			t.Errorf("string actual  =`%v`", actual)
+		}
 
-	actual, err = alert.Send(m.AlertNotice{})
-	if err != nil {
-		t.Errorf("Execution of alert failed")
-	}
+		actual, err = alert.Send(m.AlertNotice{})
+		if err != nil {
+			t.Fatal("Execution of alert failed")
+		}
 
-	expected = "Some string with stuff\n<angle brackets>\n"
-	if expected != actual {
-		t.Errorf("TestMultiLineConfig(execute | string) check failed")
-		t.Logf("string expected=`%v`", expected)
-		t.Logf("string actual  =`%v`", actual)
-		t.Logf("bytes expected=%v", []byte(expected))
-		t.Logf("bytes actual  =%v", []byte(actual))
-	}
+		expected = "Some string with stuff\n<angle brackets>\n"
+		if expected != actual {
+			t.Error("Output mismatch")
+			t.Errorf("string expected=`%v`", expected)
+			t.Errorf("string actual  =`%v`", actual)
+		}
+	})
 }
