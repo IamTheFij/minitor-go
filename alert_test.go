@@ -1,20 +1,24 @@
 package main_test
 
 import (
+	"errors"
 	"testing"
 
 	m "git.iamthefij.com/iamthefij/minitor-go"
 )
 
-func TestAlertIsValid(t *testing.T) {
+func TestAlertValidate(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		alert    m.Alert
-		expected bool
+		expected error
 		name     string
 	}{
-		{m.Alert{Command: []string{"echo", "test"}}, true, "Command only"},
-		{m.Alert{ShellCommand: "echo test"}, true, "CommandShell only"},
-		{m.Alert{}, false, "No commands"},
+		{m.Alert{Command: []string{"echo", "test"}}, nil, "Command only"},
+		{m.Alert{ShellCommand: "echo test"}, nil, "CommandShell only"},
+		{m.Alert{Command: []string{"echo", "test"}, ShellCommand: "echo test"}, m.ErrInvalidAlert, "Both commands"},
+		{m.Alert{}, m.ErrInvalidAlert, "No commands"},
 	}
 
 	for _, c := range cases {
@@ -23,8 +27,11 @@ func TestAlertIsValid(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := c.alert.IsValid()
-			if actual != c.expected {
+			actual := c.alert.Validate()
+			hasErr := (actual != nil)
+			expectErr := (c.expected != nil)
+
+			if hasErr != expectErr || !errors.Is(actual, c.expected) {
 				t.Errorf("expected=%t actual=%t", c.expected, actual)
 			}
 		})

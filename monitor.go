@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"os/exec"
@@ -65,21 +66,51 @@ func (monitor *Monitor) Init(defaultAlertAfter int, defaultAlertEvery *int, defa
 	return nil
 }
 
-// IsValid returns a boolean indicating if the Monitor has been correctly configured
-func (monitor Monitor) IsValid() bool {
-	// TODO: Refactor and return an error containing more information on what was invalid
+// Validate checks that the Monitor is properly configured and returns errors if not
+func (monitor Monitor) Validate() error {
 	hasCommand := len(monitor.Command) > 0
 	hasShellCommand := monitor.ShellCommand != ""
 	hasValidAlertAfter := monitor.AlertAfter > 0
 	hasAlertDown := len(monitor.AlertDown) > 0
 
-	hasAtLeastOneCommand := hasCommand || hasShellCommand
-	hasAtMostOneCommand := !(hasCommand && hasShellCommand)
+	var err error
 
-	return hasAtLeastOneCommand &&
-		hasAtMostOneCommand &&
-		hasValidAlertAfter &&
-		hasAlertDown
+	hasAtLeastOneCommand := hasCommand || hasShellCommand
+	if !hasAtLeastOneCommand {
+		err = errors.Join(err, fmt.Errorf(
+			"%w: monitor %s has no command or shell_command configured",
+			ErrInvalidMonitor,
+			monitor.Name,
+		))
+	}
+
+	hasAtMostOneCommand := !(hasCommand && hasShellCommand)
+	if !hasAtMostOneCommand {
+		err = errors.Join(err, fmt.Errorf(
+			"%w: monitor %s has both command and shell_command configured",
+			ErrInvalidMonitor,
+			monitor.Name,
+		))
+	}
+
+	if !hasValidAlertAfter {
+		err = errors.Join(err, fmt.Errorf(
+			"%w: monitor %s has invalid alert_after value %d. Must be greater than 0",
+			ErrInvalidMonitor,
+			monitor.Name,
+			monitor.AlertAfter,
+		))
+	}
+
+	if !hasAlertDown {
+		err = errors.Join(err, fmt.Errorf(
+			"%w: monitor %s has no alert_down configured. Configure one here or add a default_alert_down",
+			ErrInvalidMonitor,
+			monitor.Name,
+		))
+	}
+
+	return err
 }
 
 func (monitor Monitor) LastOutput() string {

@@ -73,9 +73,7 @@ func (config Config) IsValid() error {
 	}
 
 	for _, alert := range config.Alerts {
-		if !alert.IsValid() {
-			err = errors.Join(err, fmt.Errorf("%w: %s", ErrInvalidAlert, alert.Name))
-		}
+		err = errors.Join(err, alert.Validate())
 	}
 
 	// Validate monitors
@@ -84,9 +82,7 @@ func (config Config) IsValid() error {
 	}
 
 	for _, monitor := range config.Monitors {
-		if !monitor.IsValid() {
-			err = errors.Join(err, fmt.Errorf("%w: %s", ErrInvalidMonitor, monitor.Name))
-		}
+		err = errors.Join(err, monitor.Validate())
 
 		// Check that all Monitor alerts actually exist
 		for _, isUp := range []bool{true, false} {
