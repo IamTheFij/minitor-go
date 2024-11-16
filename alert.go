@@ -37,13 +37,32 @@ type AlertNotice struct {
 	LastCheckOutput string
 }
 
-// IsValid returns a boolean indicating if the Alert has been correctly
-// configured
-func (alert Alert) IsValid() bool {
-	hasAtLeastOneCommand := alert.Command != nil || alert.ShellCommand != ""
-	hasAtMostOneCommand := alert.Command == nil || alert.ShellCommand == ""
+// Validate checks that the Alert is properly configured and returns errors if not
+func (alert Alert) Validate() error {
+	hasCommand := len(alert.Command) > 0
+	hasShellCommand := alert.ShellCommand != ""
 
-	return hasAtLeastOneCommand && hasAtMostOneCommand
+	var err error
+
+	hasAtLeastOneCommand := hasCommand || hasShellCommand
+	if !hasAtLeastOneCommand {
+		err = errors.Join(err, fmt.Errorf(
+			"%w: alert %s has no command or shell_command configured",
+			ErrInvalidAlert,
+			alert.Name,
+		))
+	}
+
+	hasAtMostOneCommand := !(hasCommand && hasShellCommand)
+	if !hasAtMostOneCommand {
+		err = errors.Join(err, fmt.Errorf(
+			"%w: alert %s has both command and shell_command configured",
+			ErrInvalidAlert,
+			alert.Name,
+		))
+	}
+
+	return err
 }
 
 // BuildTemplates compiles command templates for the Alert

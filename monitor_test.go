@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 	"time"
@@ -8,18 +9,19 @@ import (
 	m "git.iamthefij.com/iamthefij/minitor-go"
 )
 
-// TestMonitorIsValid tests the Monitor.IsValid()
-func TestMonitorIsValid(t *testing.T) {
+func TestMonitorValidate(t *testing.T) {
+	t.Parallel()
+
 	cases := []struct {
 		monitor  m.Monitor
-		expected bool
+		expected error
 		name     string
 	}{
-		{m.Monitor{AlertAfter: 1, Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, true, "Command only"},
-		{m.Monitor{AlertAfter: 1, ShellCommand: "echo test", AlertDown: []string{"log"}}, true, "CommandShell only"},
-		{m.Monitor{AlertAfter: 1, Command: []string{"echo", "test"}}, false, "No AlertDown"},
-		{m.Monitor{AlertAfter: 1, AlertDown: []string{"log"}}, false, "No commands"},
-		{m.Monitor{AlertAfter: -1, Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, false, "Invalid alert threshold, -1"},
+		{m.Monitor{AlertAfter: 1, Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, nil, "Command only"},
+		{m.Monitor{AlertAfter: 1, ShellCommand: "echo test", AlertDown: []string{"log"}}, nil, "CommandShell only"},
+		{m.Monitor{AlertAfter: 1, Command: []string{"echo", "test"}}, m.ErrInvalidMonitor, "No AlertDown"},
+		{m.Monitor{AlertAfter: 1, AlertDown: []string{"log"}}, m.ErrInvalidMonitor, "No commands"},
+		{m.Monitor{AlertAfter: -1, Command: []string{"echo", "test"}, AlertDown: []string{"log"}}, m.ErrInvalidMonitor, "Invalid alert threshold, -1"},
 	}
 
 	for _, c := range cases {
@@ -28,8 +30,11 @@ func TestMonitorIsValid(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := c.monitor.IsValid()
-			if actual != c.expected {
+			actual := c.monitor.Validate()
+			hasErr := (actual != nil)
+			expectErr := (c.expected != nil)
+
+			if hasErr != expectErr || !errors.Is(actual, c.expected) {
 				t.Errorf("IsValid(%v), expected=%t actual=%t", c.name, c.expected, actual)
 			}
 		})
