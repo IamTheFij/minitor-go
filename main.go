@@ -136,7 +136,7 @@ func main() {
 
 	// Load configuration
 	config, err := LoadConfig(*configPath)
-	slog.OnErrFatalf(err, "Error loading config: %v", err)
+	slog.OnErrFatalf(err, "Error loading config")
 
 	// Serve metrics exporter, if specified
 	if ExportMetrics {
