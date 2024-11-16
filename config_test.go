@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"errors"
 	"testing"
 
 	m "git.iamthefij.com/iamthefij/minitor-go"
@@ -8,16 +9,18 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	cases := []struct {
-		configPath string
-		expectErr  bool
-		name       string
+		configPath  string
+		expectedErr error
+		name        string
 	}{
-		{"./test/does-not-exist", true, "Invalid config path"},
-		{"./test/invalid-config-missing-alerts.hcl", true, "Invalid config missing alerts"},
-		{"./test/invalid-config-type.hcl", true, "Invalid config type for key"},
-		{"./test/invalid-config-unknown-alert.hcl", true, "Invalid config unknown alert"},
-		{"./test/valid-config-default-values.hcl", false, "Valid config file with default values"},
-		{"./test/valid-config.hcl", false, "Valid config file"},
+		{"./test/does-not-exist", m.ErrLoadingConfig, "Invalid config path"},
+		{"./test/invalid-config-wrong-hcl-type.hcl", m.ErrLoadingConfig, "Incorrect HCL type"},
+		{"./test/invalid-config-missing-alerts.hcl", m.ErrNoAlerts, "Invalid config missing alerts"},
+		{"./test/invalid-config-missing-alerts.hcl", m.ErrInvalidConfig, "Invalid config general"},
+		{"./test/invalid-config-invalid-duration.hcl", m.ErrConfigInit, "Invalid config type for key"},
+		{"./test/invalid-config-unknown-alert.hcl", m.ErrUnknownAlert, "Invalid config unknown alert"},
+		{"./test/valid-config-default-values.hcl", nil, "Valid config file with default values"},
+		{"./test/valid-config.hcl", nil, "Valid config file"},
 	}
 	for _, c := range cases {
 		c := c
@@ -27,9 +30,10 @@ func TestLoadConfig(t *testing.T) {
 
 			_, err := m.LoadConfig(c.configPath)
 			hasErr := (err != nil)
+			expectErr := (c.expectedErr != nil)
 
-			if hasErr != c.expectErr {
-				t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectErr, err)
+			if hasErr != expectErr || !errors.Is(err, c.expectedErr) {
+				t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectedErr, err)
 			}
 		})
 	}
