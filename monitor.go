@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"os/exec"
 	"time"
@@ -31,8 +32,40 @@ type Monitor struct { //nolint:maligned
 	lastCheckDuration time.Duration
 }
 
-// IsValid returns a boolean indicating if the Monitor has been correctly
-// configured
+// Init initializes the Monitor with default values
+func (monitor *Monitor) Init(defaultAlertAfter int, defaultAlertEvery *int, defaultAlertDown []string, defaultAlertUp []string) error {
+	// Parse the check_interval string into a time.Duration
+	if monitor.CheckIntervalStr != nil {
+		var err error
+
+		monitor.CheckInterval, err = time.ParseDuration(*monitor.CheckIntervalStr)
+		if err != nil {
+			return fmt.Errorf("failed to parse check_interval duration for monitor %s: %w", monitor.Name, err)
+		}
+	}
+
+	// Set default values for monitor alerts
+	if monitor.AlertAfter == 0 {
+		minAlertAfter := 1
+		monitor.AlertAfter = max(defaultAlertAfter, minAlertAfter)
+	}
+
+	if monitor.AlertEvery == nil {
+		monitor.AlertEvery = defaultAlertEvery
+	}
+
+	if len(monitor.AlertDown) == 0 {
+		monitor.AlertDown = defaultAlertDown
+	}
+
+	if len(monitor.AlertUp) == 0 {
+		monitor.AlertUp = defaultAlertUp
+	}
+
+	return nil
+}
+
+// IsValid returns a boolean indicating if the Monitor has been correctly configured
 func (monitor Monitor) IsValid() bool {
 	// TODO: Refactor and return an error containing more information on what was invalid
 	hasCommand := len(monitor.Command) > 0
@@ -53,8 +86,7 @@ func (monitor Monitor) LastOutput() string {
 	return monitor.lastOutput
 }
 
-// ShouldCheck returns a boolean indicating if the Monitor is ready to be
-// be checked again
+// ShouldCheck returns a boolean indicating if the Monitor is ready to be be checked again
 func (monitor Monitor) ShouldCheck() bool {
 	if monitor.lastCheck.IsZero() || monitor.CheckInterval == 0 {
 		return true
@@ -65,8 +97,7 @@ func (monitor Monitor) ShouldCheck() bool {
 	return sinceLastCheck >= monitor.CheckInterval
 }
 
-// Check will run the command configured by the Monitor and return a status
-// and a possible AlertNotice
+// Check will run the command configured by the Monitor and return a status and a possible AlertNotice
 func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	var cmd *exec.Cmd
 	if len(monitor.Command) > 0 {
@@ -103,6 +134,15 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 	)
 
 	return isSuccess, alertNotice
+}
+
+// GetAlertNames gives a list of alert names for a given monitor status
+func (monitor Monitor) GetAlertNames(up bool) []string {
+	if up {
+		return monitor.AlertUp
+	}
+
+	return monitor.AlertDown
 }
 
 // IsUp returns the status of the current monitor
@@ -171,15 +211,6 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	}
 
 	return notice
-}
-
-// GetAlertNames gives a list of alert names for a given monitor status
-func (monitor Monitor) GetAlertNames(up bool) []string {
-	if up {
-		return monitor.AlertUp
-	}
-
-	return monitor.AlertDown
 }
 
 func (monitor Monitor) createAlertNotice(isUp bool) *AlertNotice {
