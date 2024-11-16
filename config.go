@@ -130,7 +130,6 @@ func LoadConfig(filePath string) (Config, error) {
 	var config Config
 
 	if err := hclsimple.DecodeFile(filePath, nil, &config); err != nil {
-		slog.Debugf("Failed to load config from %s: %v", filePath, err)
 		return config, errors.Join(ErrLoadingConfig, err)
 	}
 
