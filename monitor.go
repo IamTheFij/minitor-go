@@ -149,6 +149,7 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 	// If we're going to alert, increment count
 	if notice != nil {
 		monitor.alertCount++
+		notice.AlertCount = monitor.alertCount
 	}
 
 	return notice

@@ -138,6 +138,47 @@ func TestMonitorSuccess(t *testing.T) {
 	}
 }
 
+func TestMonitorAlertCount(t *testing.T) {
+	var alertEvery int16 = 1
+
+	cases := []struct {
+		checkSuccess bool
+		alertCount   int16
+		name         string
+	}{
+		{false, 1, "First failure and first alert"},
+		{false, 2, "Second failure and first alert"},
+		{true, 2, "Success should preserve past alert count"},
+		{false, 1, "First failure and first alert after success"},
+	}
+
+	// Unlike previous tests, this one requires a static Monitor with repeated
+	// calls to the failure method
+	monitor := Monitor{failureCount: 0, AlertAfter: 1, AlertEvery: &alertEvery}
+
+	for _, c := range cases {
+		log.Printf("Testing case %s", c.name)
+
+		var notice *AlertNotice
+		if c.checkSuccess {
+			notice = monitor.success()
+		} else {
+			notice = monitor.failure()
+		}
+
+		if notice == nil {
+			t.Errorf("failure(%v) expected notice, got nil", c.name)
+		}
+
+		if notice.AlertCount != c.alertCount {
+			t.Errorf("failure(%v), expected=%v actual=%v", c.name, c.alertCount, notice.AlertCount)
+			log.Printf("Case failed: %s", c.name)
+		}
+
+		log.Println("-----")
+	}
+}
+
 // TestMonitorFailureAlertAfter tests that alerts will not trigger until
 // hitting the threshold provided by AlertAfter
 func TestMonitorFailureAlertAfter(t *testing.T) {
