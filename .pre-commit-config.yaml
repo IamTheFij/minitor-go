@@ -15,6 +15,6 @@ repos:
     hooks:
       - id: golangci-lint
   - repo: https://github.com/hadolint/hadolint
-    rev: v2.12.1-beta
+    rev: refs/pull/1152/head
     hooks:
-      - id: hadolint
+      - id: hadolint-github
