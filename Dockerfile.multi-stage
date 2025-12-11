@@ -14,7 +14,7 @@ ARG VERSION=dev
 ENV CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=${TARGETARCH}
 RUN go build -ldflags "-X main.version=${VERSION}" -a -installsuffix nocgo -o minitor .
 
-FROM alpine:3.18
+FROM alpine:3.23
 RUN mkdir /app
 WORKDIR /app/
 
