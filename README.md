@@ -75,7 +75,7 @@ monitor "example" {
   alert_up = ["log"]
   check_interval = "1m"
   alert_after = 1
-  alert_every = 0
+  alert_every = -1
 }
 ```
 

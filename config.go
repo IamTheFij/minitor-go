@@ -47,6 +47,11 @@ func (config *Config) Init() (err error) {
 		config.DefaultAlertAfter = minAlertAfter
 	}
 
+	if config.DefaultAlertEvery == nil {
+		defaultDefaultAlertEvery := -1
+		config.DefaultAlertEvery = &defaultDefaultAlertEvery
+	}
+
 	for _, monitor := range config.Monitors {
 		if err = monitor.Init(
 			config.DefaultAlertAfter,

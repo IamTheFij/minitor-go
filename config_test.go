@@ -3,6 +3,7 @@ package main_test
 import (
 	"errors"
 	"testing"
+	"time"
 
 	m "git.iamthefij.com/iamthefij/minitor-go"
 )
@@ -35,6 +36,91 @@ func TestLoadConfig(t *testing.T) {
 			if hasErr != expectErr || !errors.Is(err, c.expectedErr) {
 				t.Errorf("LoadConfig(%v), expected_error=%v actual=%v", c.name, c.expectedErr, err)
 			}
+		})
+	}
+}
+
+func TestDefaultConfig(t *testing.T) {
+	cases := []struct {
+		configPath     string
+		expectedResult m.Config
+		name           string
+	}{
+		{
+			"./test/valid-config-default-values.hcl",
+			m.Config{
+				CheckInterval:     1 * time.Second,
+				DefaultAlertAfter: 2,
+				DefaultAlertEvery: Ptr(0),
+				DefaultAlertDown:  []string{"log_command"},
+			},
+			"override defaults",
+		},
+		{
+			"./test/valid-config.hcl",
+			m.Config{
+				CheckInterval:     30 * time.Second,
+				DefaultAlertAfter: 1,
+				DefaultAlertEvery: Ptr(-1),
+				DefaultAlertDown:  []string{},
+			},
+			"default defaults",
+		},
+	}
+
+	for _, c := range cases {
+		c := c
+
+		t.Run(c.name, func(t *testing.T) {
+			t.Parallel()
+
+			config, err := m.LoadConfig(c.configPath)
+			if err != nil {
+				t.Errorf("Got error when loading config file %q: %s", c.configPath, err)
+			}
+
+			// Test Config has default values
+			if config.DefaultAlertAfter != c.expectedResult.DefaultAlertAfter {
+				t.Errorf("Got unexpected DefaultAlertAfter from file %q: expected=%v actual=%v", c.configPath, c.expectedResult.DefaultAlertAfter, config.DefaultAlertAfter)
+			}
+
+			if *config.DefaultAlertEvery != *c.expectedResult.DefaultAlertEvery {
+				t.Errorf("Got unexpected DefaultAlertEvery from file %q: expected=%v actual=%v", c.configPath, *c.expectedResult.DefaultAlertEvery, *config.DefaultAlertEvery)
+			}
+
+			if !m.EqualSliceString(config.DefaultAlertUp, c.expectedResult.DefaultAlertUp) {
+				t.Errorf("Got unexpected DefaultAlertUp from file %q: expected=%v actual=%v", c.configPath, c.expectedResult.DefaultAlertUp, config.DefaultAlertUp)
+			}
+
+			if !m.EqualSliceString(config.DefaultAlertDown, c.expectedResult.DefaultAlertDown) {
+				t.Errorf("Got unexpected DefaultAlertDown from file %q: expected=%v actual=%v", c.configPath, c.expectedResult.DefaultAlertDown, config.DefaultAlertDown)
+			}
+
+			// Check that monitor defaults propagate
+			var defaultMonitor *m.Monitor
+			for _, monitor := range config.Monitors {
+				if monitor.Name == "Default" {
+					defaultMonitor = monitor
+				}
+			}
+
+			if defaultMonitor == nil {
+				t.Errorf("failed to find default monitor in %q", c.configPath)
+			}
+
+			if defaultMonitor.AlertAfter != c.expectedResult.DefaultAlertAfter {
+				t.Errorf("Got unexpected AlertAfter from file %q: expected=%v actual=%v", c.configPath, c.expectedResult.DefaultAlertAfter, defaultMonitor.AlertAfter)
+			}
+
+			if *defaultMonitor.AlertEvery != *c.expectedResult.DefaultAlertEvery {
+				t.Errorf("Got unexpected AlertEvery from file %q: expected=%v actual=%v", c.configPath, *c.expectedResult.DefaultAlertEvery, *defaultMonitor.AlertEvery)
+			}
+
+			if !m.EqualSliceString(defaultMonitor.AlertUp, c.expectedResult.DefaultAlertUp) {
+				t.Errorf("Got unexpected AlertUp from file %q: expected=%v actual=%v", c.configPath, c.expectedResult.DefaultAlertUp, defaultMonitor.AlertUp)
+			}
+
+			// NOTE: Can't compare AlertDown because default is empty and that is invalid
 		})
 	}
 }

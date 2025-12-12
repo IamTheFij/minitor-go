@@ -8,6 +8,11 @@ alert "log_shell" {
   shell_command = "echo \"Failure on {{.MonitorName}} User is $USER\""
 }
 
+monitor "Default" {
+  command = ["echo"]
+  alert_down = ["log_command"]
+}
+
 monitor "Command" {
   command =  ["echo", "$PATH"]
   alert_down =  ["log_command", "log_shell"]

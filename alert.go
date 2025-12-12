@@ -101,14 +101,14 @@ func (alert *Alert) BuildTemplates() error {
 	}
 
 	switch {
-	case alert.commandTemplate == nil && alert.Command != nil:
+	case alert.Command != nil:
 		alert.commandTemplate = []*template.Template{}
 		for i, cmdPart := range alert.Command {
 			alert.commandTemplate = append(alert.commandTemplate, template.Must(
 				template.New(alert.Name+fmt.Sprint(i)).Funcs(timeFormatFuncs).Parse(cmdPart),
 			))
 		}
-	case alert.commandShellTemplate == nil && alert.ShellCommand != "":
+	case alert.ShellCommand != "":
 		shellCmd := alert.ShellCommand
 
 		alert.commandShellTemplate = template.Must(
