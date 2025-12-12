@@ -17,7 +17,7 @@ I'm running a few small services and found Sensu, Consul, Nagios, etc. to all be
 Install and execute with:
 
 ```bash
-go install github.com/iamthefij/minitor-go@latest
+go install github.com/iamthefij/minitor-go/v2@latest
 minitor
 ```
 
