@@ -57,8 +57,8 @@ The global configurations are:
 |key|value|
 |---|---|
 |`check_interval`|Maximum frequency to run checks for each monitor as duration, eg. 1m2s.|
-|`default_alert_after`|A default value used as an `alert_after` value for a monitor if not specified or 0.|
-|`default_alert_every`|A default value used as an `alert_every` value for a monitor if not specified.|
+|`default_alert_after`|A default value used as an `alert_after` value for a monitor if not specified. Defaults 1, which will alert immediately.|
+|`default_alert_every`|A default value used as an `alert_every` value for a monitor if not specified. Defaults to -1, which will re-alert exponentially.|
 |`default_alert_down`|Default down alerts to used by a monitor in case none are provided.|
 |`default_alert_up`|Default up alerts to used by a monitor in case none are provided.|
 |`monitor`|block listing monitors. Detailed description below|
@@ -174,11 +174,3 @@ Whether you're looking to submit a patch or tell me I broke something, you can c
 Primary Repo: https://git.iamthefij.com/iamthefij/minitor.git
 
 Github Mirror: https://github.com/IamTheFij/minitor.git
-
-## Original Minitor
-
-This is a reimplementation of [Minitor](https://git.iamthefij.com/iamthefij/minitor) in Go
-
-Minitor is already a minimal monitoring tool. Python 3 was a quick way to get something live, but Python itself comes with a large footprint. Thus Go feels like a better fit for the project, longer term.
-
-Initial target is meant to be roughly compatible requiring only minor changes to configuration. Future iterations may diverge to take advantage of Go specific features.
