@@ -1,6 +1,6 @@
 module git.iamthefij.com/iamthefij/minitor-go
 
-go 1.23.0
+go 1.25.0
 
 require (
 	git.iamthefij.com/iamthefij/slog v1.3.0
