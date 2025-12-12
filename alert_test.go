@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	m "git.iamthefij.com/iamthefij/minitor-go"
+	m "git.iamthefij.com/iamthefij/minitor-go/v2"
 )
 
 func TestAlertValidate(t *testing.T) {

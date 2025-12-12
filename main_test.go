@@ -3,7 +3,7 @@ package main_test
 import (
 	"testing"
 
-	m "git.iamthefij.com/iamthefij/minitor-go"
+	m "git.iamthefij.com/iamthefij/minitor-go/v2"
 )
 
 func Ptr[T any](v T) *T {

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	m "git.iamthefij.com/iamthefij/minitor-go"
+	m "git.iamthefij.com/iamthefij/minitor-go/v2"
 )
 
 func TestLoadConfig(t *testing.T) {
