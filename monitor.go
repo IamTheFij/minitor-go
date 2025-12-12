@@ -16,7 +16,8 @@ type Monitor struct { //nolint:maligned
 	CheckIntervalStr *string `hcl:"check_interval,optional"`
 	CheckInterval    time.Duration
 
-	Name         string   `hcl:"name,label"`
+	Name         string `hcl:"name,label"`
+	AlertCount   int
 	AlertAfter   int      `hcl:"alert_after,optional"`
 	AlertEvery   *int     `hcl:"alert_every,optional"`
 	AlertDown    []string `hcl:"alert_down,optional"`
@@ -25,7 +26,6 @@ type Monitor struct { //nolint:maligned
 	ShellCommand string   `hcl:"shell_command,optional"`
 
 	// Other values
-	alertCount        int
 	failureCount      int
 	lastCheck         time.Time
 	lastSuccess       time.Time
@@ -149,9 +149,9 @@ func (monitor *Monitor) Check() (bool, *AlertNotice) {
 
 	isSuccess := (err == nil)
 	if isSuccess {
-		alertNotice = monitor.success()
+		alertNotice = monitor.Success()
 	} else {
-		alertNotice = monitor.failure()
+		alertNotice = monitor.Failure()
 	}
 
 	slog.Debugf("Command output: %s", monitor.lastOutput)
@@ -178,7 +178,7 @@ func (monitor Monitor) GetAlertNames(up bool) []string {
 
 // IsUp returns the status of the current monitor
 func (monitor Monitor) IsUp() bool {
-	return monitor.alertCount == 0
+	return monitor.AlertCount == 0
 }
 
 // LastCheckMilliseconds gives number of miliseconds the last check ran for
@@ -186,20 +186,20 @@ func (monitor Monitor) LastCheckMilliseconds() int64 {
 	return monitor.lastCheckDuration.Milliseconds()
 }
 
-func (monitor *Monitor) success() (notice *AlertNotice) {
+func (monitor *Monitor) Success() (notice *AlertNotice) {
 	if !monitor.IsUp() {
 		// Alert that we have recovered
 		notice = monitor.createAlertNotice(true)
 	}
 
 	monitor.failureCount = 0
-	monitor.alertCount = 0
+	monitor.AlertCount = 0
 	monitor.lastSuccess = time.Now()
 
 	return
 }
 
-func (monitor *Monitor) failure() (notice *AlertNotice) {
+func (monitor *Monitor) Failure() (notice *AlertNotice) {
 	monitor.failureCount++
 	// If we haven't hit the minimum failures, we can exit
 	if monitor.failureCount < monitor.AlertAfter {
@@ -231,14 +231,15 @@ func (monitor *Monitor) failure() (notice *AlertNotice) {
 		}
 	default:
 		// Handle negative numbers indicating an exponential backoff
-		if failureCount >= int(math.Pow(2, float64(monitor.alertCount))-1) { //nolint:gomnd
+		if failureCount >= int(math.Pow(2, float64(monitor.AlertCount))-1) { //nolint:mnd
 			notice = monitor.createAlertNotice(false)
 		}
 	}
 
 	// If we're going to alert, increment count
 	if notice != nil {
-		monitor.alertCount++
+		monitor.AlertCount++
+		notice.AlertCount = monitor.AlertCount
 	}
 
 	return notice
@@ -248,7 +249,7 @@ func (monitor Monitor) createAlertNotice(isUp bool) *AlertNotice {
 	// TODO: Maybe add something about recovery status here
 	return &AlertNotice{
 		MonitorName:     monitor.Name,
-		AlertCount:      monitor.alertCount,
+		AlertCount:      monitor.AlertCount,
 		FailureCount:    monitor.failureCount,
 		LastCheckOutput: monitor.lastOutput,
 		LastSuccess:     monitor.lastSuccess,
