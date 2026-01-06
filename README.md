@@ -167,6 +167,48 @@ minitor -metrics
 minitor -metrics -metrics-port 3000
 ```
 
+## Migrating from v1 to v2
+
+Minitor v2 introduces some breaking changes from v1. The most notable changes are:
+  - The configuration file is now in HCL format instead of YAML.
+  - The the Python formatting backwards compatability is removed.
+  - The Command and ShellCommand fields are now mutually exclusive.
+  - The check_interval is now strictly a duration string value. Eg. "30s" rather than `30`.
+  - Default alert_every is now -1 (exponential backoff) rather than 0 (no re-alerting).
+
+For the configuration, a confic that looked like this in v1:
+
+```yaml
+check_interval: 60
+
+monitors:
+  - name: example
+    command: "false"
+    alert_down: ["log"]
+
+alerts:
+  log:
+    command: ["echo", "Minitor up={{.IsUp}} for {{.MonitorName}}"]
+```
+
+Would now look like this in v2:
+
+```hcl
+check_interval = "1m"
+
+monitor "example" {
+  # example showing string to shell command migration
+  shell_command = "false"
+  alert_down = ["log"]
+  check_interval = "1m"
+}
+
+alert "log" {
+  # example showing list to exec command migration
+  command = ["echo", "Minitor up={{.IsUp}} for {{.MonitorName}}"]
+}
+```
+
 ## Contributing
 
 Whether you're looking to submit a patch or tell me I broke something, you can contribute through the Github mirror and I can merge PRs back to the source repository.
