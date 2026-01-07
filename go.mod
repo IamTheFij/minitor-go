@@ -4,6 +4,7 @@ go 1.23.0
 
 require (
 	git.iamthefij.com/iamthefij/slog v1.3.0
+	git.iamthefij.com/iamthefij/slog/v2 v2.0.1
 	github.com/prometheus/client_golang v1.23.2
 	gopkg.in/yaml.v2 v2.4.0
 )
