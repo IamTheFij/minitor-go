@@ -69,8 +69,8 @@ docker-run: docker-build
 $(TARGETS): $(GOFILES)
 	mkdir -p ./dist
 	GOOS=$(word 2, $(subst -, ,$(@))) GOARCH=$(word 3, $(subst -, ,$(@))) CGO_ENABLED=0 \
-		 go build -ldflags '-X "main.version=${VERSION}"' -a -installsuffix nocgo \
-		 -o $@
+		go build -ldflags '-X "main.version=${VERSION}"' -a -installsuffix nocgo \
+		-o $@
 
 .PHONY: $(TARGET_ALIAS)
 $(TARGET_ALIAS):
