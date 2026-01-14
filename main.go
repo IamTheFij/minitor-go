@@ -119,7 +119,7 @@ func SendStartupAlerts(config *Config, alertNames []string) error {
 
 func main() {
 	showVersion := flag.Bool("version", false, "Display the version of minitor and exit")
-	configPath := flag.String("config", "config.yml", "Alternate configuration path (default: config.yml)")
+	configPath := flag.String("config", "config.hcl", "Alternate configuration path (default: config.hcl)")
 	startupAlerts := flag.String("startup-alerts", "", "List of alerts to run on startup. This can help determine unhealthy alerts early on. (default \"\")")
 
 	flag.BoolVar(&slog.DebugLevel, "debug", false, "Enables debug logs (default: false)")

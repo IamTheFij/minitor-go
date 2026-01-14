@@ -14,6 +14,7 @@
 
 # User configuration
 config.yml
+config.hcl
 
 # Output binary
 minitor
