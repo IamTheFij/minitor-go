@@ -50,7 +50,9 @@ You can configure the timezone for the container by passing a `TZ` env variable.
 
 ## Configuring
 
-In this repo, you can explore the `sample-config.hcl` file for an example, but the general structure is as follows. It should be noted that environment variable interpolation happens on load of the HCL file.
+In this repo, you can explore the `sample-config.hcl` file for an example, but the general structure is as follows. If you are passing environment variables to your commands or alerts, you should be aware that `${VAR}` syntax is reserved for HCL variable interpolation. To avoid issues, you can use `$${VAR}` syntax to escape the `$` character, simply use `$VAR`.
+
+```hcl
 
 The global configurations are:
 

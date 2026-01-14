@@ -38,15 +38,15 @@ alert "mailgun_down" {
     -F to=me@minitor.mon \
     -F text="Our monitor failed" \
     https://api.mailgun.net/v3/minitor.mon/messages \
-    -u "api:${MAILGUN_API_KEY}"
+    -u "api:$${MAILGUN_API_KEY}"
   EOF
 }
 
 alert "sms_down" {
   shell_command = <<-EOF
   curl -s -X POST -F "Body=Failure! {{.MonitorName}} has failed" \
-    -F "From=${AVAILABLE_NUMBER}" -F "To=${MY_PHONE}" \
-    "https://api.twilio.com/2010-04-01/Accounts/${ACCOUNT_SID}/Messages" \
-    -u "${ACCOUNT_SID}:${AUTH_TOKEN}"
+    -F "From=$${AVAILABLE_NUMBER}" -F "To=$${MY_PHONE}" \
+    "https://api.twilio.com/2010-04-01/Accounts/$${ACCOUNT_SID}/Messages" \
+    -u "$${ACCOUNT_SID}:$${AUTH_TOKEN}"
   EOF
 }
