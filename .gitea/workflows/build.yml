@@ -34,7 +34,7 @@ jobs:
           go-version-file: go.mod
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
 
       - name: Run pre-commit
         uses: https://git.iamthefij.com/iamthefij/pre-commit-action@v3.0.2
