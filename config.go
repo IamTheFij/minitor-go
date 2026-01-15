@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.iamthefij.com/iamthefij/slog"
+	"git.iamthefij.com/iamthefij/slog/v2"
 	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 

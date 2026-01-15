@@ -1,5 +1,4 @@
-git.iamthefij.com/iamthefij/slog v1.3.0 h1:4Hu5PQvDrW5e3FrTS3q2iIXW0iPvhNY/9qJsqDR3K3I=
-git.iamthefij.com/iamthefij/slog v1.3.0/go.mod h1:1RUj4hcCompZkAxXCRfUX786tb3cM/Zpkn97dGfUfbg=
+git.iamthefij.com/iamthefij/slog/v2 v2.0.1 h1:eXf3ga0aMTkm0l6EMYOQpg34S+dQw7cN8o+W1Cg/0C0=
 git.iamthefij.com/iamthefij/slog/v2 v2.0.1/go.mod h1:VFjX1e1tfHADyQr2wJBAz0JUQT+K/5FBjzSHgUKOuu8=
 github.com/agext/levenshtein v1.2.1 h1:QmvMAjj2aEICytGiWzmxoE0x2KZvE0fvmqMOfy2tjT8=
 github.com/agext/levenshtein v1.2.1/go.mod h1:JEDfjyjHDjOF/1e4FlBE/PkbqA9OfWu2ki2W0IB5558=

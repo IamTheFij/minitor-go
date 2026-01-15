@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"git.iamthefij.com/iamthefij/slog"
+	"git.iamthefij.com/iamthefij/slog/v2"
 )
 
 var (
