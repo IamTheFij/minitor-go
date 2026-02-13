@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-python@v6
 
       - name: Run pre-commit
-        uses: https://git.iamthefij.com/iamthefij/pre-commit-action@v3.0.2
+        uses: https://git.iamthefij.com/iamthefij/pre-commit-action@v3.1.0
 
   release:
     runs-on: ubuntu-latest
