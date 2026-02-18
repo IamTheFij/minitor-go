@@ -1,52 +1,34 @@
 version: "2"
 linters:
   enable:
+    - errcheck
     - errname
     - errorlint
     - exhaustive
-    - goprintffuncname
+    - gosec
+    - govet
+    - ineffassign
     - misspell
     - mnd
-    - tagliatelle
+    - modernize
+    - staticcheck
+    - tagalign
     - testpackage
     - thelper
     - tparallel
     - unconvert
+    - unused
     - wrapcheck
-    - wsl
-  disable:
-    - gochecknoglobals
-  settings:
-    gosec:
-      excludes:
-        - G204
-    tagliatelle:
-      case:
-        rules:
-          json: snake
-          yaml: snake
+    - wsl_v5
   exclusions:
     generated: lax
     presets:
-      - comments
       - common-false-positives
-      - legacy
-      - std-error-handling
     rules:
       - linters:
           - gosec
         path: _test\.go
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
 formatters:
   enable:
     - gofumpt
     - goimports
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
