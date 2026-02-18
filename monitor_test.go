@@ -25,7 +25,6 @@ func TestMonitorValidate(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
@@ -103,7 +102,6 @@ func TestMonitorGetAlertNames(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
@@ -175,7 +173,6 @@ func TestMonitorFailureAlertAfter(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
@@ -204,15 +201,14 @@ func TestMonitorFailureAlertEvery(t *testing.T) {
 	}{
 		{m.Monitor{ShellCommand: "false", AlertAfter: 1}, []bool{true}, "No AlertEvery set"}, // Defaults to true because AlertAfter and AlertEvery default to nil
 		// Alert first time only, after 1
-		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: Ptr(0)}, []bool{true, false, false}, "Alert first time only after 1"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: new(0)}, []bool{true, false, false}, "Alert first time only after 1"},
 		// Alert every time, after 1
-		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: Ptr(1)}, []bool{true, true, true}, "Alert every time after 1"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: new(1)}, []bool{true, true, true}, "Alert every time after 1"},
 		// Alert every other time, after 1
-		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: Ptr(2)}, []bool{true, false, true, false}, "Alert every other time after 1"},
+		{m.Monitor{ShellCommand: "false", AlertAfter: 1, AlertEvery: new(2)}, []bool{true, false, true, false}, "Alert every other time after 1"},
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
@@ -301,7 +297,6 @@ func TestMonitorCheck(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()

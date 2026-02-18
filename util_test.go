@@ -24,7 +24,6 @@ func TestUtilEqualSliceString(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(fmt.Sprintf("%v %v", c.a, c.b), func(t *testing.T) {
 			t.Parallel()

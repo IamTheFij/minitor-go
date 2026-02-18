@@ -6,10 +6,6 @@ import (
 	m "git.iamthefij.com/iamthefij/minitor-go/v2"
 )
 
-func Ptr[T any](v T) *T {
-	return &v
-}
-
 // TestCheckConfig tests the checkConfig function
 // It also tests results for potentially invalid configuration. For example, no alerts
 func TestCheckMonitors(t *testing.T) {
@@ -91,7 +87,6 @@ func TestCheckMonitors(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
@@ -171,7 +166,6 @@ func TestFirstRunAlerts(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
