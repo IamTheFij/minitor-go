@@ -24,7 +24,6 @@ func TestLoadConfig(t *testing.T) {
 		{"./test/valid-config.hcl", nil, "Valid config file"},
 	}
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
@@ -51,7 +50,7 @@ func TestDefaultConfig(t *testing.T) {
 			m.Config{
 				CheckInterval:     1 * time.Second,
 				DefaultAlertAfter: 2,
-				DefaultAlertEvery: Ptr(0),
+				DefaultAlertEvery: new(0),
 				DefaultAlertDown:  []string{"log_command"},
 			},
 			"override defaults",
@@ -61,7 +60,7 @@ func TestDefaultConfig(t *testing.T) {
 			m.Config{
 				CheckInterval:     30 * time.Second,
 				DefaultAlertAfter: 1,
-				DefaultAlertEvery: Ptr(-1),
+				DefaultAlertEvery: new(-1),
 				DefaultAlertDown:  []string{},
 			},
 			"default defaults",
@@ -69,7 +68,6 @@ func TestDefaultConfig(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		c := c
 
 		t.Run(c.name, func(t *testing.T) {
 			t.Parallel()
